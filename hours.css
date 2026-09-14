@@ -1,0 +1,94 @@
+
+.club-hours-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.hours-card {
+  padding: 22px;
+  border: 1px solid rgba(16,40,61,.09);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15,35,55,.07);
+}
+
+.hours-day {
+  color: #10283d;
+  font-size: 21px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.hours-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(16,40,61,.07);
+  color: #647486;
+  font-size: 14px;
+}
+
+.hours-row:last-child {
+  border-bottom: 0;
+}
+
+.hours-row strong {
+  color: #22b9c2;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.period-title {
+  margin: 12px 0 2px;
+  color: #10283d;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.period-divider {
+  height: 1px;
+  background: rgba(34,185,194,.2);
+  margin: 13px 0;
+}
+
+.closed {
+  text-align: center;
+  background: rgba(16,40,61,.04);
+}
+
+.closed-text {
+  color: #10283d;
+  font-size: 22px;
+  font-weight: 800;
+  margin: 10px 0 5px;
+}
+
+.closed p {
+  margin: 0;
+  color: #647486;
+  font-size: 13px;
+}
+
+@media (min-width: 700px) {
+  .club-hours-grid {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .hours-card {
+    padding: 18px;
+  }
+
+  .hours-day {
+    font-size: 19px;
+  }
+
+  .hours-row {
+    font-size: 13px;
+  }
+}

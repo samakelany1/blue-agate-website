@@ -296,6 +296,51 @@ function hoursPage() {
   `);
 }
 
+function newsPage() {
+  show(`
+    <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
+    <h2>الإعلانات</h2>
+    <p class="hero-text">آخر التنبيهات والتحديثات من Blue Agate.</p>
+
+    <article class="announcement-card maintenance-announcement">
+      <div class="announcement-badge">📢 تنبيه مهم</div>
+      <p class="announcement-date">15 – 17 سبتمبر</p>
+      <h3>إغلاق النادي للصيانة</h3>
+
+      <p class="announcement-text">
+        مشتركاتنا العزيزات 🤍<br>
+        حرصًا منا على تطوير النادي وتحسين بيئة التدريب، سيتم إغلاق النادي مؤقتًا
+        لمدة 3 أيام لإجراء أعمال الصيانة والتجديد.
+      </p>
+
+      <div class="announcement-days">
+        <div><strong>الثلاثاء</strong><span>15 سبتمبر</span></div>
+        <div><strong>الأربعاء</strong><span>16 سبتمبر</span></div>
+        <div><strong>الخميس</strong><span>17 سبتمبر</span></div>
+      </div>
+
+      <div class="return-date">
+        <span>✨</span>
+        <div>
+          <small>موعد العودة للعمل</small>
+          <strong>السبت 19 سبتمبر</strong>
+        </div>
+      </div>
+
+      <div class="compensation-note">
+        <strong>🤍 يهمنا نوضح لكِ</strong>
+        <p>
+          سيتم تعويض المشتركات عن أيام الإغلاق الثلاثة.
+        </p>
+      </div>
+
+      <p class="announcement-thanks">
+        شكرًا لتفهمكن وتعاونكن، ونسعد دائمًا بتقديم الأفضل لكن.
+      </p>
+    </article>
+  `);
+}
+
 function placeholderPage(title, text) {
   show(`
     <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
@@ -318,7 +363,7 @@ document.querySelectorAll(".menu-card").forEach(card => {
     if (page === "hours") hoursPage();
 
     if (page === "news") {
-      placeholderPage("الإعلانات", "هنا ستظهر إعلانات وتحديثات النادي.");
+      newsPage();
     }
 
     if (page === "contact") {

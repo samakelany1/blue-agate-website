@@ -1,5 +1,5 @@
 
-/* الأسعار والعروض - قسم بارز في بداية الصفحة */
+/* الأسعار والعروض - القسم البارز في بداية الصفحة */
 .offers-highlight {
   margin: 0 auto 22px;
   width: min(100%, 760px);
@@ -73,6 +73,154 @@
   font-size: 20px;
 }
 
+/* صفحة الأسعار */
+.price-section {
+  margin-top: 26px;
+}
+
+.price-section + .price-section {
+  margin-top: 34px;
+}
+
+.price-section-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(34,185,194,.22);
+}
+
+.price-section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: rgba(34,185,194,.12);
+  font-size: 25px;
+}
+
+.price-section-label {
+  display: block;
+  color: #22b9c2;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.price-section-head h3 {
+  margin: 2px 0 0;
+  color: #10283d;
+  font-size: 23px;
+}
+
+.price-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.price-grid.single-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.price-card {
+  position: relative;
+  padding: 22px 18px;
+  border: 1px solid rgba(16,40,61,.09);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15,35,55,.07);
+  text-align: center;
+}
+
+.price-card h4 {
+  margin: 4px 0 8px;
+  color: #10283d;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.price-card .price {
+  color: #22b9c2;
+  font-size: 31px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.price-card .price small {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.price-card p {
+  margin: 8px 0 0;
+  color: #647486;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.national-offer {
+  border: 2px solid rgba(34,185,194,.65);
+  background: linear-gradient(145deg, rgba(34,185,194,.12), #fff);
+}
+
+.offer-tag,
+.mini-tag {
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.offer-tag {
+  padding: 7px 11px;
+  background: #10283d;
+  color: #fff;
+}
+
+.mini-tag {
+  padding: 5px 9px;
+  background: rgba(34,185,194,.12);
+  color: #168d95;
+}
+
+.compact {
+  padding: 18px 14px;
+}
+
+.compact h4 {
+  font-size: 15px;
+}
+
+.compact .price {
+  font-size: 26px;
+}
+
+.swimming-section {
+  padding-top: 4px;
+}
+
+.price-note {
+  margin-top: 22px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(16,40,61,.05);
+}
+
+.price-note strong {
+  color: #10283d;
+}
+
+.price-note p {
+  margin: 5px 0 0;
+  color: #647486;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 @media (max-width: 600px) {
   .offers-highlight-btn {
     grid-template-columns: auto 1fr;
@@ -95,37 +243,13 @@
   .offers-desc {
     font-size: 12px;
   }
-}
 
+  .price-grid,
+  .price-grid.single-row {
+    grid-template-columns: 1fr;
+  }
 
-/* صفحة الأسعار والعروض */
-.offers-page-card {
-  margin-top: 20px;
-  padding: 30px 22px;
-  border: 1px solid rgba(34, 185, 194, .35);
-  border-radius: 24px;
-  background: linear-gradient(145deg, rgba(34,185,194,.10), rgba(255,255,255,.96));
-  text-align: center;
-}
-
-.offers-page-icon {
-  font-size: 34px;
-  margin-bottom: 8px;
-}
-
-.offers-page-card h3 {
-  margin: 0 0 10px;
-  color: #10283d;
-  font-size: 24px;
-}
-
-.offers-page-card p {
-  margin: 7px auto;
-  max-width: 560px;
-  line-height: 1.8;
-}
-
-.offers-page-note {
-  color: #647486;
-  font-size: 13px;
+  .price-section-head h3 {
+    font-size: 21px;
+  }
 }

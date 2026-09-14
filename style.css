@@ -306,3 +306,17 @@ footer span { font-size: 9px; letter-spacing: 1.2px; }
 @media (max-width: 620px) {
   .class-info-grid { grid-template-columns: 1fr; }
 }
+
+.section-title {
+  color: var(--navy);
+  font-size: 18px;
+  margin: 24px 0 10px;
+}
+.benefit-box {
+  min-height: 92px;
+  justify-content: center;
+}
+.benefit-box span {
+  color: var(--teal);
+  font-weight: 800;
+}

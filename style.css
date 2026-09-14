@@ -208,3 +208,47 @@ footer span { font-size: 9px; letter-spacing: 1.2px; }
   .schedule-table { font-size: 12px; }
   .schedule-table th, .schedule-table td { padding: 9px 6px; }
 }
+
+.day-detail { display: grid; gap: 11px; margin-top: 18px; }
+.class-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f6fbfb;
+}
+.class-period {
+  background: var(--navy);
+  color: white;
+  padding: 15px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.class-period span { font-size: 12px; }
+.class-name {
+  padding: 15px 12px;
+  color: var(--navy);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+.schedule-note {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--teal-light);
+  border-right: 4px solid var(--teal);
+}
+.schedule-note strong { color: var(--navy); }
+.schedule-note p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+
+@media (max-width: 520px) {
+  .class-row { grid-template-columns: 1fr; }
+  .class-period { justify-content: flex-start; }
+}

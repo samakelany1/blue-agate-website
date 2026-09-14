@@ -1,12 +1,36 @@
 const content = document.getElementById("content");
 
 const schedule = {
-  "السبت": ["لا يوجد كلاس صباحي", "علوي", "علوي"],
-  "الأحد": ["علوي", "بطن وكور", "بطن وكور"],
-  "الاثنين": ["بطن وكور", "سفلي", "سفلي"],
-  "الثلاثاء": ["سفلي", "HIIT", "HIIT"],
-  "الأربعاء": ["سفلي", "ظهر وأفخاذ جانبية", "بيلاتس"],
-  "الخميس": ["فل بودي", "فل بودي", "فل بودي"]
+  "السبت": {
+    morning: "لا يوجد كلاس صباحي",
+    first: "علوي",
+    second: "علوي"
+  },
+  "الأحد": {
+    morning: "علوي",
+    first: "بطن وكور",
+    second: "بطن وكور"
+  },
+  "الاثنين": {
+    morning: "بطن وكور",
+    first: "سفلي",
+    second: "سفلي"
+  },
+  "الثلاثاء": {
+    morning: "سفلي",
+    first: "HIIT",
+    second: "HIIT"
+  },
+  "الأربعاء": {
+    morning: "HIIT",
+    first: "ظهر وأفخاذ جانبية",
+    second: "بيلاتس"
+  },
+  "الخميس": {
+    morning: "فل بودي",
+    first: "فل بودي",
+    second: "فل بودي"
+  }
 };
 
 const days = Object.keys(schedule);
@@ -27,26 +51,47 @@ function schedulePage() {
   show(`
     <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
     <h2>جدول الكلاسات</h2>
-    <p class="hero-text">اختاري اليوم لمشاهدة جدول الكلاسات.</p>
+    <p class="hero-text">اختاري اليوم لمشاهدة جدول الكلاسات بالتفصيل.</p>
+
     <div class="day-grid">
-      ${days.map(day => `<button class="day-btn" onclick="dayPage('${day}')">${day}</button>`).join("")}
+      ${days.map((day, i) => `
+        <button class="day-btn" onclick="dayPage('${day}')">
+          <span style="display:block;font-size:11px;color:#22b9c2;margin-bottom:3px">0${i+1}</span>
+          ${day}
+        </button>
+      `).join("")}
     </div>
   `);
 }
 
 function dayPage(day) {
-  const [morning, first, second] = schedule[day];
+  const data = schedule[day];
+
   show(`
     <button class="back-btn" onclick="schedulePage()">← العودة للأيام</button>
     <h2>جدول يوم ${day}</h2>
-    <table class="schedule-table">
-      <thead><tr><th>الفترة</th><th>الكلاس</th></tr></thead>
-      <tbody>
-        <tr><td>كلاس الصباح</td><td>${morning}</td></tr>
-        <tr><td>الكلاس الأول</td><td>${first}</td></tr>
-        <tr><td>الكلاس الثاني</td><td>${second}</td></tr>
-      </tbody>
-    </table>
+
+    <div class="day-detail">
+      <div class="class-row">
+        <div class="class-period">☀️<span>كلاس الصباح</span></div>
+        <div class="class-name">${data.morning}</div>
+      </div>
+
+      <div class="class-row">
+        <div class="class-period">🕐<span>الكلاس الأول</span></div>
+        <div class="class-name">${data.first}</div>
+      </div>
+
+      <div class="class-row">
+        <div class="class-period">🕐<span>الكلاس الثاني</span></div>
+        <div class="class-name">${data.second}</div>
+      </div>
+    </div>
+
+    <div class="schedule-note">
+      <strong>ملاحظة</strong>
+      <p>مواعيد الكلاسات متغيرة حسب الجدول الأسبوعي. يرجى الالتزام بالجدول لتحقيق أفضل النتائج.</p>
+    </div>
   `);
 }
 

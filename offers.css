@@ -1,0 +1,131 @@
+
+/* الأسعار والعروض - قسم بارز في بداية الصفحة */
+.offers-highlight {
+  margin: 0 auto 22px;
+  width: min(100%, 760px);
+}
+
+.offers-highlight-btn {
+  width: 100%;
+  border: 1px solid rgba(34, 185, 194, 0.55);
+  border-radius: 24px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, rgba(34,185,194,.18), rgba(255,255,255,.97));
+  box-shadow: 0 12px 32px rgba(15, 35, 55, .10);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  text-align: right;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.offers-highlight-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(15, 35, 55, .15);
+}
+
+.offers-badge {
+  background: #22b9c2;
+  color: #fff;
+  padding: 9px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.offers-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.offers-label {
+  color: #22b9c2;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.offers-content strong {
+  color: #10283d;
+  font-size: 21px;
+  line-height: 1.4;
+}
+
+.offers-desc {
+  color: #647486;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.offers-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #10283d;
+  color: #fff;
+  font-size: 20px;
+}
+
+@media (max-width: 600px) {
+  .offers-highlight-btn {
+    grid-template-columns: auto 1fr;
+    padding: 17px;
+    gap: 12px;
+  }
+
+  .offers-arrow {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    width: 34px;
+    height: 34px;
+  }
+
+  .offers-content strong {
+    font-size: 18px;
+  }
+
+  .offers-desc {
+    font-size: 12px;
+  }
+}
+
+
+/* صفحة الأسعار والعروض */
+.offers-page-card {
+  margin-top: 20px;
+  padding: 30px 22px;
+  border: 1px solid rgba(34, 185, 194, .35);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(34,185,194,.10), rgba(255,255,255,.96));
+  text-align: center;
+}
+
+.offers-page-icon {
+  font-size: 34px;
+  margin-bottom: 8px;
+}
+
+.offers-page-card h3 {
+  margin: 0 0 10px;
+  color: #10283d;
+  font-size: 24px;
+}
+
+.offers-page-card p {
+  margin: 7px auto;
+  max-width: 560px;
+  line-height: 1.8;
+}
+
+.offers-page-note {
+  color: #647486;
+  font-size: 13px;
+}

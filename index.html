@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="attendance.css">
   <link rel="stylesheet" href="profile.css">
+  <link rel="stylesheet" href="app-layout.css">
 </head>
 <body>
   <header class="topbar">
@@ -65,91 +66,26 @@
       </div>
     </section>
 
-    <section id="member-portal" class="member-portal" hidden>
-      <div class="member-card">
-        <h2 id="member-name">أهلًا بكِ في Blue Agate 💙</h2>
-        <p id="member-email"></p>
+
+
+    <section id="member-portal" class="member-portal app-shell" hidden>
+      <div class="member-card member-welcome-card">
+        <div>
+          <p class="small-label">BLUE AGATE FITNESS</p>
+          <h2 id="member-name">أهلًا بكِ في Blue Agate 💙</h2>
+          <p id="member-email"></p>
+        </div>
         <button id="logout-btn" class="logout-btn" type="button">تسجيل الخروج</button>
       </div>
-    </section>
 
-    <section id="profile-section" class="profile-section" hidden aria-label="ملف العضوة">
-      <div class="profile-card">
-        <div class="profile-header">
-          <div class="profile-avatar">👤</div>
-          <div>
-            <h2 id="profile-name">عضوة Blue Agate</h2>
-            <p id="profile-email"></p>
-          </div>
-        </div>
+      <nav class="portal-nav" aria-label="التنقل في بوابة المشتركة">
+        <button class="portal-nav-btn active" data-view="home" type="button"><span>⌂</span><strong>الرئيسية</strong></button>
+        <button class="portal-nav-btn" data-view="classes" type="button"><span>📅</span><strong>الكلاسات</strong></button>
+        <button class="portal-nav-btn" data-view="attendance" type="button"><span>✓</span><strong>الحضور</strong></button>
+        <button class="portal-nav-btn" data-view="profile" type="button"><span>👤</span><strong>حسابي</strong></button>
+      </nav>
 
-        <div id="subscription-status" class="subscription-status subscription-unknown">
-          <h3 id="subscription-status-title">بيانات الاشتراك غير مكتملة</h3>
-          <p id="subscription-status-text">أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.</p>
-        </div>
-
-        <div class="profile-info-grid">
-          <div class="profile-info">
-            <span>رقم الجوال</span>
-            <strong id="profile-phone">غير مضاف</strong>
-          </div>
-          <div class="profile-info">
-            <span>نوع الاشتراك</span>
-            <strong id="profile-membership">غير مضاف</strong>
-          </div>
-          <div class="profile-info">
-            <span>بداية الاشتراك</span>
-            <strong id="profile-start">غير مضاف</strong>
-          </div>
-          <div class="profile-info">
-            <span>نهاية الاشتراك</span>
-            <strong id="profile-end">غير مضاف</strong>
-          </div>
-        </div>
-
-        <h3 class="profile-edit-title">بياناتك</h3>
-        <div id="profile-message" class="profile-message" hidden></div>
-
-        <form id="profile-form" class="profile-form">
-          <label for="profile-name-input">الاسم</label>
-          <input id="profile-name-input" type="text" autocomplete="name" required value="">
-
-          <label for="profile-phone-input">رقم الجوال</label>
-          <input id="profile-phone-input" type="tel" autocomplete="tel" placeholder="05xxxxxxxx">
-
-          <button id="save-profile-btn" class="profile-save" type="submit">حفظ البيانات</button>
-        </form>
-      </div>
-    </section>
-
-    <section id="attendance-section" class="attendance-section" hidden aria-label="الحضور">
-      <div class="attendance-card">
-        <div class="attendance-head">
-          <p class="attendance-kicker">حضورك يصنع الفرق</p>
-          <h2 class="attendance-title">سجّلي حضورك اليوم 💙</h2>
-          <p class="attendance-subtitle">كل حضور يضيف لكِ يومًا في سجل التزامك، والجمعة يوم إجازة لا يقطع الـStreak.</p>
-        </div>
-        <div class="attendance-stats">
-          <div class="attendance-stat">
-            <div class="streak-icon">🔥</div>
-            <span id="streak-number" class="streak-number">0</span>
-            <span class="attendance-stat-label">يوم Streak</span>
-          </div>
-          <div class="attendance-stat">
-            <span id="attendance-total" class="attendance-total">0</span>
-            <span class="attendance-stat-label">إجمالي أيام الحضور</span>
-          </div>
-        </div>
-        <button id="attendance-btn" class="attendance-btn" type="button">سجّلي حضوري اليوم</button>
-        <p id="attendance-today-status" class="attendance-status">لم تسجلي حضورك اليوم بعد</p>
-        <div id="attendance-message" class="attendance-message" hidden></div>
-        <div class="attendance-history">
-          <h3 class="attendance-history-title">آخر أيام حضورك</h3>
-          <div id="attendance-list" class="attendance-list"></div>
-        </div>
-      </div>
-    </section>
-
+      <div id="view-home" class="portal-view active-view">
     <section class="offers-highlight" aria-label="الأسعار والعروض">
       <button class="offers-highlight-btn" data-page="offers">
         <div class="offers-badge">✨ عروضنا</div>
@@ -197,7 +133,87 @@
       </button>
     </section>
 
-    <section id="content" class="content-section" hidden></section>
+      </div>
+
+      <div id="view-attendance" class="portal-view" hidden>
+    <section id="attendance-section" class="attendance-section" aria-label="الحضور">
+      <div class="attendance-card">
+        <div class="attendance-head">
+          <p class="attendance-kicker">حضورك يصنع الفرق</p>
+          <h2 class="attendance-title">سجّلي حضورك اليوم 💙</h2>
+          <p class="attendance-subtitle">كل حضور يضيف لكِ يومًا في سجل التزامك، والجمعة يوم إجازة لا يقطع الـStreak.</p>
+        </div>
+        <div class="attendance-stats">
+          <div class="attendance-stat">
+            <div class="streak-icon">🔥</div>
+            <span id="streak-number" class="streak-number">0</span>
+            <span class="attendance-stat-label">يوم Streak</span>
+          </div>
+          <div class="attendance-stat">
+            <span id="attendance-total" class="attendance-total">0</span>
+            <span class="attendance-stat-label">إجمالي أيام الحضور</span>
+          </div>
+        </div>
+        <button id="attendance-btn" class="attendance-btn" type="button">سجّلي حضوري اليوم</button>
+        <p id="attendance-today-status" class="attendance-status">لم تسجلي حضورك اليوم بعد</p>
+        <div id="attendance-message" class="attendance-message" hidden></div>
+        <div class="attendance-history">
+          <h3 class="attendance-history-title">آخر أيام حضورك</h3>
+          <div id="attendance-list" class="attendance-list"></div>
+        </div>
+      </div>
+    </section>
+
+
+      </div>
+
+      <div id="view-profile" class="portal-view" hidden>
+    <section id="profile-section" class="profile-section" aria-label="ملف العضوة">
+      <div class="profile-card">
+        <div class="profile-header">
+          <div class="profile-avatar">👤</div>
+          <div>
+            <h2 id="profile-name">عضوة Blue Agate</h2>
+            <p id="profile-email"></p>
+          </div>
+        </div>
+
+        <div id="subscription-status" class="subscription-status subscription-unknown">
+          <h3 id="subscription-status-title">بيانات الاشتراك غير مكتملة</h3>
+          <p id="subscription-status-text">أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.</p>
+        </div>
+
+        <div class="profile-info-grid">
+          <div class="profile-info">
+            <span>رقم الجوال</span>
+            <strong id="profile-phone">غير مضاف</strong>
+          </div>
+          <div class="profile-info">
+            <span>نوع الاشتراك</span>
+            <strong id="profile-membership">غير مضاف</strong>
+          </div>
+        </div>
+
+        <h3 class="profile-edit-title">بياناتك</h3>
+        <div id="profile-message" class="profile-message" hidden></div>
+
+        <form id="profile-form" class="profile-form">
+          <label for="profile-name-input">الاسم</label>
+          <input id="profile-name-input" type="text" autocomplete="name" required value="">
+
+          <label for="profile-phone-input">رقم الجوال</label>
+          <input id="profile-phone-input" type="tel" autocomplete="tel" placeholder="05xxxxxxxx">
+
+          <button id="save-profile-btn" class="profile-save" type="submit">حفظ البيانات</button>
+        </form>
+      </div>
+    </section>
+
+
+      </div>
+
+      <section id="content" class="content-section portal-view" hidden></section>
+    </section>
 
     <footer>
       <p>التزامك اليوم .. هو قوتك غداً</p>
@@ -215,24 +231,6 @@
   <script src="auth.js"></script>
   <script src="attendance.js"></script>
   <script src="profile.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (typeof firebase !== "undefined") {
-        firebase.auth().onAuthStateChanged(user => {
-          const attendance = document.getElementById("attendance-section");
-          const profile = document.getElementById("profile-section");
-          if (attendance) attendance.hidden = !user;
-          if (profile) profile.hidden = !user;
-
-          if (user) {
-            const nameInput = document.getElementById("profile-name-input");
-            if (nameInput && !nameInput.value) {
-              nameInput.value = user.displayName || "";
-            }
-          }
-        });
-      }
-    });
-  </script>
+  <script src="app-layout.js"></script>
 </body>
 </html>

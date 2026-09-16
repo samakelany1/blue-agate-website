@@ -1,0 +1,62 @@
+/* Blue Agate - App-like member portal layout */
+.app-shell { margin: 20px 0 0; }
+.member-welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.member-welcome-card .logout-btn { margin-top: 0; white-space: nowrap; }
+
+.portal-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 14px 0 18px;
+  padding: 7px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 7px 22px rgba(8,41,79,.06);
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+}
+
+.portal-nav-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 15px;
+  padding: 10px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: .18s ease;
+}
+.portal-nav-btn span { font-size: 17px; line-height: 1; }
+.portal-nav-btn strong { font-size: 12px; }
+.portal-nav-btn:hover { background: #f3fafa; color: var(--navy); }
+.portal-nav-btn.active { background: var(--navy); color: #fff; }
+
+.portal-view[hidden] { display: none !important; }
+.portal-view.active-view { display: block; }
+
+#view-home > .offers-highlight { margin-top: 0; }
+#view-home > .welcome-card { margin-top: 16px; }
+#view-home .menu-grid { margin-bottom: 0; }
+
+#view-attendance .attendance-section,
+#view-profile .profile-section { margin-top: 0; }
+
+#content.portal-view { margin-top: 0; }
+
+@media (max-width: 620px) {
+  .member-welcome-card { align-items: flex-start; flex-direction: column; }
+  .member-welcome-card .logout-btn { width: 100%; }
+  .portal-nav { top: 6px; margin-top: 10px; }
+  .portal-nav-btn { flex-direction: column; gap: 4px; padding: 9px 4px; }
+  .portal-nav-btn strong { font-size: 10px; }
+}

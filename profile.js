@@ -1,71 +1,47 @@
 // Blue Agate - Member Profile & Subscription
-// بيانات الاشتراك تُقرأ من Firestore ولا يمكن للعضوة تعديلها من الموقع.
+// العضوة ترى حالة الاشتراك فقط بدون مدة أو تواريخ.
 
-function formatArabicDate(dateValue) {
-  if (!dateValue) return "غير مضاف";
-
-  let date;
-  if (typeof dateValue.toDate === "function") {
-    date = dateValue.toDate();
-  } else {
-    date = new Date(dateValue);
-  }
-
-  if (Number.isNaN(date.getTime())) return "غير مضاف";
-
-  return date.toLocaleDateString("ar-SA", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
-}
-
-function daysRemaining(endDateValue) {
-  if (!endDateValue) return null;
-
-  const end = typeof endDateValue.toDate === "function"
-    ? endDateValue.toDate()
-    : new Date(endDateValue);
-
-  if (Number.isNaN(end.getTime())) return null;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  end.setHours(23, 59, 59, 999);
-
-  return Math.ceil((end - today) / 86400000);
+function toProfileDate(dateValue) {
+  if (!dateValue) return null;
+  const date = typeof dateValue.toDate === "function" ? dateValue.toDate() : new Date(dateValue);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function subscriptionStatus(endDateValue) {
-  const days = daysRemaining(endDateValue);
+  const end = toProfileDate(endDateValue);
 
-  if (days === null) {
+  if (!end) {
     return {
       title: "بيانات الاشتراك غير مكتملة",
-      text: "أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.",
+      text: "راجعي النادي لتحديث بيانات اشتراكك.",
       className: "subscription-unknown"
     };
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  const days = Math.ceil((end - today) / 86400000);
+
   if (days < 0) {
     return {
-      title: "الاشتراك منتهي",
-      text: `انتهى الاشتراك بتاريخ ${formatArabicDate(endDateValue)}.`,
+      title: "اشتراكك منتهي",
+      text: "يمكنكِ تجديد اشتراكك من النادي.",
       className: "subscription-expired"
     };
   }
 
   if (days <= 7) {
     return {
-      title: "الاشتراك قريب من الانتهاء",
-      text: `متبقي ${days} ${days === 1 ? "يوم" : "أيام"} على انتهاء الاشتراك.`,
+      title: "اشتراكك قريب من الانتهاء",
+      text: "إذا كنتِ ترغبين بالاستمرار، تواصلي مع النادي للتجديد.",
       className: "subscription-warning"
     };
   }
 
   return {
     title: "اشتراكك نشط ✓",
-    text: `متبقي ${days} يومًا على انتهاء الاشتراك.`,
+    text: "اشتراكك فعال ويمكنكِ الاستفادة من خدمات النادي.",
     className: "subscription-active"
   };
 }
@@ -74,33 +50,27 @@ async function loadMemberProfile() {
   const user = firebase.auth().currentUser;
   if (!user) return;
 
-  const db = firebase.firestore();
-
   try {
-    const doc = await db.collection("members").doc(user.uid).get();
-
-    if (!doc.exists) {
-      console.warn("Member document not found.");
-      return;
-    }
+    const doc = await firebase.firestore().collection("members").doc(user.uid).get();
+    if (!doc.exists) return;
 
     const data = doc.data();
-
     const name = data.name || user.displayName || "عضوة Blue Agate";
     const email = data.email || user.email || "";
     const phone = data.phone || "غير مضاف";
     const membershipType = data.membershipType || "غير مضاف";
-    const startDate = data.startDate;
-    const endDate = data.endDate;
 
-    document.getElementById("profile-name").textContent = name;
-    document.getElementById("profile-email").textContent = email;
-    document.getElementById("profile-phone").textContent = phone;
-    document.getElementById("profile-membership").textContent = membershipType;
-    document.getElementById("profile-start").textContent = formatArabicDate(startDate);
-    document.getElementById("profile-end").textContent = formatArabicDate(endDate);
+    const nameEl = document.getElementById("profile-name");
+    const emailEl = document.getElementById("profile-email");
+    const phoneEl = document.getElementById("profile-phone");
+    const membershipEl = document.getElementById("profile-membership");
 
-    const status = subscriptionStatus(endDate);
+    if (nameEl) nameEl.textContent = name;
+    if (emailEl) emailEl.textContent = email;
+    if (phoneEl) phoneEl.textContent = phone;
+    if (membershipEl) membershipEl.textContent = membershipType;
+
+    const status = subscriptionStatus(data.endDate);
     const statusBox = document.getElementById("subscription-status");
     const statusTitle = document.getElementById("subscription-status-title");
     const statusText = document.getElementById("subscription-status-text");
@@ -109,7 +79,9 @@ async function loadMemberProfile() {
     if (statusTitle) statusTitle.textContent = status.title;
     if (statusText) statusText.textContent = status.text;
 
+    const nameInput = document.getElementById("profile-name-input");
     const phoneInput = document.getElementById("profile-phone-input");
+    if (nameInput) nameInput.value = name;
     if (phoneInput) phoneInput.value = data.phone || "";
   } catch (error) {
     console.error("Profile load error:", error);
@@ -118,13 +90,11 @@ async function loadMemberProfile() {
 
 async function saveMemberProfile(event) {
   event.preventDefault();
-
   const user = firebase.auth().currentUser;
   if (!user) return;
 
   const nameInput = document.getElementById("profile-name-input");
   const phoneInput = document.getElementById("profile-phone-input");
-
   const name = nameInput.value.trim();
   const phone = phoneInput.value.trim();
 
@@ -137,14 +107,7 @@ async function saveMemberProfile(event) {
   if (button) button.disabled = true;
 
   try {
-    await firebase.firestore()
-      .collection("members")
-      .doc(user.uid)
-      .update({
-        name: name,
-        phone: phone
-      });
-
+    await firebase.firestore().collection("members").doc(user.uid).update({ name, phone });
     showProfileMessage("تم حفظ بياناتك بنجاح ✓", "success");
     await loadMemberProfile();
   } catch (error) {
@@ -158,24 +121,15 @@ async function saveMemberProfile(event) {
 function showProfileMessage(message, type) {
   const box = document.getElementById("profile-message");
   if (!box) return;
-
   box.textContent = message;
   box.className = `profile-message ${type}`;
   box.hidden = false;
-
-  setTimeout(() => {
-    box.hidden = true;
-  }, 3500);
+  setTimeout(() => { box.hidden = true; }, 3500);
 }
 
 function initMemberProfile() {
-  document.getElementById("profile-form")
-    ?.addEventListener("submit", saveMemberProfile);
-
+  document.getElementById("profile-form")?.addEventListener("submit", saveMemberProfile);
   firebase.auth().onAuthStateChanged(user => {
-    const section = document.getElementById("profile-section");
-    if (section) section.hidden = !user;
-
     if (user) loadMemberProfile();
   });
 }

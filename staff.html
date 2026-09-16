@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة المدربات | Blue Agate</title>
+  <link rel="stylesheet" href="staff.css">
+</head>
+<body>
+  <main class="page">
+    <section id="login-view" class="card auth-card">
+      <div class="brand-mark">BLUE AGATE</div>
+      <h1>بوابة المدربات</h1>
+      <p class="muted">سجّلي دخولك لمشاهدة جدولك وتسجيل حضورك.</p>
+
+      <form id="staff-login-form">
+        <label>البريد الإلكتروني</label>
+        <input id="staff-email" type="email" required autocomplete="username">
+
+        <label>كلمة المرور</label>
+        <input id="staff-password" type="password" required autocomplete="current-password">
+
+        <button class="primary-btn" type="submit">تسجيل الدخول</button>
+        <button id="forgot-password" class="text-btn" type="button">نسيت كلمة المرور؟</button>
+      </form>
+      <p id="login-message" class="message"></p>
+    </section>
+
+    <section id="dashboard-view" class="hidden">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">BLUE AGATE FITNESS</span>
+          <h1>أهلًا <span id="trainer-name">بالمدربة</span> 👋</h1>
+        </div>
+        <button id="logout-btn" class="logout-btn">تسجيل خروج</button>
+      </header>
+
+      <section class="hero-streak card">
+        <div>
+          <span class="eyebrow">STREAK</span>
+          <h2>🔥 <span id="streak-count">0</span> يوم متتالي</h2>
+          <p id="streak-note">سجّلي حضورك اليوم للمحافظة على الستريك.</p>
+        </div>
+        <button id="check-in-btn" class="primary-btn check-in">سجّلي حضوري اليوم</button>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat card">
+          <span>حضور هذا الأسبوع</span>
+          <strong id="week-attendance">0</strong>
+          <small>يوم</small>
+        </div>
+        <div class="stat card">
+          <span>إجمالي الحضور</span>
+          <strong id="total-attendance">0</strong>
+          <small>يوم</small>
+        </div>
+        <div class="stat card">
+          <span>كلاسات اليوم</span>
+          <strong id="today-classes-count">0</strong>
+          <small>كلاس</small>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <span class="eyebrow">TODAY</span>
+            <h2>كلاسات اليوم</h2>
+          </div>
+          <span id="today-date" class="date-pill"></span>
+        </div>
+
+        <div id="classes-list" class="classes-list"></div>
+        <div id="no-classes" class="empty hidden">ما عندك كلاسات مجدولة اليوم 🌿</div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <span class="eyebrow">PROFILE</span>
+            <h2>بيانات المدربة</h2>
+          </div>
+        </div>
+        <div class="profile-grid">
+          <div><span>الاسم</span><strong id="profile-name">—</strong></div>
+          <div><span>البريد</span><strong id="profile-email">—</strong></div>
+          <div><span>الحالة</span><strong id="profile-status">—</strong></div>
+        </div>
+      </section>
+
+      <p id="dashboard-message" class="message"></p>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="staff.js"></script>
+</body>
+</html>

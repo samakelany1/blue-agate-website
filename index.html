@@ -45,6 +45,7 @@
             <input id="login-password" type="password" autocomplete="current-password" required>
             <button class="auth-primary" type="submit">دخول</button>
           </form>
+          <button id="forgot-password" class="auth-link-button" type="button">نسيتِ كلمة المرور؟</button>
           <div class="auth-switch">ليس لديكِ حساب؟ <button id="show-register" type="button">إنشاء حساب</button></div>
         </div>
 
@@ -59,14 +60,14 @@
             <input id="register-email" type="email" autocomplete="email" required>
             <label for="register-password">كلمة المرور</label>
             <input id="register-password" type="password" autocomplete="new-password" minlength="6" required>
+            <label for="register-password-confirm">تأكيد كلمة المرور</label>
+            <input id="register-password-confirm" type="password" autocomplete="new-password" minlength="6" required>
             <button class="auth-primary" type="submit">إنشاء الحساب</button>
           </form>
           <div class="auth-switch">لديكِ حساب بالفعل؟ <button id="show-login" type="button">تسجيل الدخول</button></div>
         </div>
       </div>
     </section>
-
-
 
     <section id="member-portal" class="member-portal app-shell" hidden>
       <div class="member-card member-welcome-card">

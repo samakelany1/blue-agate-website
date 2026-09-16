@@ -346,6 +346,38 @@ async function renewSubscription(type) {
   }
 }
 
+async function deleteAttendance(dateKey) {
+  if (!currentEditingUid || !dateKey) return;
+
+  const member = allMembers.find(m => m.uid === currentEditingUid);
+  const memberName = member?.name || "هذه العضوة";
+  const confirmed = window.confirm(`هل أنتِ متأكدة من حذف حضور ${memberName} بتاريخ ${dateKeyToArabic(dateKey)}؟\n\nسيتم حذف تسجيل الحضور لهذا اليوم نهائيًا.`);
+  if (!confirmed) return;
+
+  const buttons = document.querySelectorAll(".delete-attendance-btn");
+  buttons.forEach(btn => {
+    if (btn.dataset.dateKey === dateKey) btn.disabled = true;
+  });
+
+  try {
+    await firebase.firestore()
+      .collection("members")
+      .doc(currentEditingUid)
+      .collection("attendance")
+      .doc(dateKey)
+      .delete();
+
+    editorMessage(`تم حذف حضور ${memberName} بتاريخ ${dateKeyToArabic(dateKey)} ✓`, "success");
+    await loadMemberAttendance(currentEditingUid);
+  } catch (error) {
+    console.error(error);
+    editorMessage("تعذر حذف الحضور. تأكدي من صلاحيات Firestore.", "error");
+    buttons.forEach(btn => {
+      if (btn.dataset.dateKey === dateKey) btn.disabled = false;
+    });
+  }
+}
+
 async function loadMemberAttendance(uid) {
   const list = document.getElementById("editor-attendance-list");
   const total = document.getElementById("editor-attendance-total");
@@ -355,7 +387,16 @@ async function loadMemberAttendance(uid) {
     const dates = [];
     snapshot.forEach(doc => { const data = doc.data(); if (data.dateKey) dates.push(data.dateKey); });
     total.textContent = `${dates.length} حضور`;
-    list.innerHTML = dates.length ? dates.slice(0, 15).map(key => `<span>${dateKeyToArabic(key)} ✓</span>`).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
+    list.innerHTML = dates.length ? dates.slice(0, 15).map(key => `
+      <div class="attendance-item">
+        <span>${dateKeyToArabic(key)} ✓</span>
+        <button class="delete-attendance-btn" type="button" data-date-key="${escapeHtml(key)}">حذف</button>
+      </div>
+    `).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
+
+    list.querySelectorAll(".delete-attendance-btn").forEach(button => {
+      button.addEventListener("click", () => deleteAttendance(button.dataset.dateKey));
+    });
   } catch (error) {
     console.error(error);
     list.innerHTML = '<div class="mini-empty">تعذر تحميل سجل الحضور.</div>';

@@ -210,13 +210,32 @@ button, input, select { font: inherit; }
 
 .attendance-box span { color: #647486; font-size: 12px; }
 .mini-attendance-list { display: flex; flex-wrap: wrap; gap: 7px; }
-.mini-attendance-list > span {
-  padding: 7px 10px;
+.attendance-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 7px 6px 10px;
   border-radius: 10px;
   background: #eefbf9;
   color: #08766f;
   font-size: 12px;
 }
+.attendance-item > span {
+  color: #08766f;
+  font-size: 12px;
+}
+.delete-attendance-btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 7px;
+  background: #fff1f1;
+  color: #a33;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.delete-attendance-btn:hover { background: #ffe2e2; }
+.delete-attendance-btn:disabled { opacity: .55; cursor: not-allowed; }
 
 .empty-state, .mini-empty {
   padding: 25px;

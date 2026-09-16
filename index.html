@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="offers.css">
   <link rel="stylesheet" href="hours.css">
   <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="attendance.css">
 </head>
 <body>
   <header class="topbar">
@@ -82,7 +83,37 @@
       </div>
     </section>
 
-    <!-- الأسعار والعروض: تظهر في البداية بشكل واضح -->
+    <section id="attendance-section" class="attendance-section" hidden aria-label="الحضور">
+      <div class="attendance-card">
+        <div class="attendance-head">
+          <p class="attendance-kicker">حضورك يصنع الفرق</p>
+          <h2 class="attendance-title">سجّلي حضورك اليوم 💙</h2>
+          <p class="attendance-subtitle">كل حضور يضيف لكِ يومًا في سجل التزامك، والجمعة يوم إجازة لا يقطع الـStreak.</p>
+        </div>
+
+        <div class="attendance-stats">
+          <div class="attendance-stat">
+            <div class="streak-icon">🔥</div>
+            <span id="streak-number" class="streak-number">0</span>
+            <span class="attendance-stat-label">يوم Streak</span>
+          </div>
+          <div class="attendance-stat">
+            <span id="attendance-total" class="attendance-total">0</span>
+            <span class="attendance-stat-label">إجمالي أيام الحضور</span>
+          </div>
+        </div>
+
+        <button id="attendance-btn" class="attendance-btn" type="button">سجّلي حضوري اليوم</button>
+        <p id="attendance-today-status" class="attendance-status">لم تسجلي حضورك اليوم بعد</p>
+        <div id="attendance-message" class="attendance-message" hidden></div>
+
+        <div class="attendance-history">
+          <h3 class="attendance-history-title">آخر أيام حضورك</h3>
+          <div id="attendance-list" class="attendance-list"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="offers-highlight" aria-label="الأسعار والعروض">
       <button class="offers-highlight-btn" data-page="offers">
         <div class="offers-badge">✨ عروضنا</div>
@@ -164,5 +195,18 @@
   <script src="offers.js"></script>
   <script src="hours.js"></script>
   <script src="auth.js"></script>
+  <script src="attendance.js"></script>
+
+  <script>
+    // إظهار بطاقة الحضور فقط بعد تسجيل الدخول.
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof firebase !== "undefined") {
+        firebase.auth().onAuthStateChanged(user => {
+          const section = document.getElementById("attendance-section");
+          if (section) section.hidden = !user;
+        });
+      }
+    });
+  </script>
 </body>
 </html>

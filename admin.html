@@ -107,6 +107,23 @@
         </div>
 
         <div id="trainers-list" class="members-list trainer-list"><div class="empty-state">جاري تحميل المدربات...</div></div>
+        <div id="trainer-schedule-panel" class="trainer-schedule-panel" hidden>
+          <div class="panel-title-row">
+            <div>
+              <h3>جدول المدربة: <span id="schedule-trainer-name">—</span></h3>
+              <p class="muted-text">حددي الكلاسات الأسبوعية، وسيظهر جدول اليوم تلقائيًا في بوابة المدربة.</p>
+            </div>
+            <button id="close-trainer-schedule" class="secondary-btn dark-btn" type="button">إغلاق</button>
+          </div>
+
+          <div id="schedule-message" class="admin-message" hidden></div>
+          <div id="weekly-schedule-editor" class="weekly-schedule-editor"></div>
+
+          <div class="form-actions schedule-save-actions">
+            <button id="save-trainer-schedule" class="primary-btn" type="button">حفظ جدول المدربة</button>
+          </div>
+        </div>
+
       </section>
 
       <section id="add-member" class="admin-card add-member-card" hidden>

@@ -509,3 +509,187 @@ async function initAdmin() {
 }
 
 document.addEventListener("DOMContentLoaded", initAdmin);
+
+
+// =========================
+// Trainer weekly schedule
+// =========================
+const TRAINER_DAYS = [
+  {id:0, name:"الأحد"},
+  {id:1, name:"الاثنين"},
+  {id:2, name:"الثلاثاء"},
+  {id:3, name:"الأربعاء"},
+  {id:4, name:"الخميس"},
+  {id:5, name:"الجمعة"},
+  {id:6, name:"السبت"}
+];
+
+const TRAINER_CLASSES = [
+  "علوي",
+  "بطن وكور",
+  "سفلي",
+  "HIIT",
+  "ظهر وأكتاف جانبية",
+  "بيلاتس",
+  "فل بودي",
+  "يوغا"
+];
+
+let currentScheduleTrainer = null;
+
+function classOptions(selected = "") {
+  return TRAINER_CLASSES.map(name =>
+    `<option value="${escapeHtml(name)}" ${name === selected ? "selected" : ""}>${escapeHtml(name)}</option>`
+  ).join("");
+}
+
+function renderScheduleEditor(rows = []) {
+  const editor = document.getElementById("weekly-schedule-editor");
+  if (!editor) return;
+
+  editor.innerHTML = TRAINER_DAYS.map(day => {
+    const dayRows = rows.filter(r => Number(r.day) === day.id);
+    const slots = dayRows.length ? dayRows : [];
+    return `
+      <div class="schedule-day-card" data-day="${day.id}">
+        <div class="schedule-day-head">
+          <h4>${day.name}</h4>
+          <span class="muted-text">${slots.length ? `${slots.length} كلاس` : "لا يوجد كلاس"}</span>
+        </div>
+        <div class="schedule-slots">
+          ${slots.map(r => scheduleSlotHtml(day.id, r.time || "", r.className || "")).join("")}
+        </div>
+        <button type="button" class="add-slot-btn" onclick="addScheduleSlot(${day.id})">+ إضافة كلاس</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function scheduleSlotHtml(day, time = "", className = "") {
+  return `
+    <div class="schedule-slot" data-day="${day}">
+      <input type="text" class="schedule-time" placeholder="مثال: 4:30 م" value="${escapeHtml(time)}">
+      <select class="schedule-class">${classOptions(className)}</select>
+      <button type="button" onclick="this.closest('.schedule-slot').remove(); updateDayCount(this.closest('.schedule-day-card'))">حذف</button>
+    </div>
+  `;
+}
+
+function addScheduleSlot(day) {
+  const card = document.querySelector(`.schedule-day-card[data-day="${day}"]`);
+  if (!card) return;
+  const slots = card.querySelector(".schedule-slots");
+  slots.insertAdjacentHTML("beforeend", scheduleSlotHtml(day, "", ""));
+  updateDayCount(card);
+}
+
+function updateDayCount(card) {
+  if (!card) return;
+  const count = card.querySelectorAll(".schedule-slot").length;
+  const badge = card.querySelector(".schedule-day-head .muted-text");
+  if (badge) badge.textContent = count ? `${count} كلاس` : "لا يوجد كلاس";
+}
+
+async function openTrainerSchedule(uid) {
+  const trainer = allTrainers.find(t => t.uid === uid);
+  if (!trainer) return;
+
+  currentScheduleTrainer = trainer;
+  document.getElementById("schedule-trainer-name").textContent = trainer.name || "المدربة";
+  document.getElementById("trainer-schedule-panel").hidden = false;
+  document.getElementById("schedule-message").hidden = true;
+  document.getElementById("weekly-schedule-editor").innerHTML = '<div class="empty-state">جاري تحميل الجدول...</div>';
+  document.getElementById("trainer-schedule-panel").scrollIntoView({behavior:"smooth", block:"start"});
+
+  try {
+    const snap = await firebase.firestore()
+      .collection("staff").doc(uid).collection("schedule").get();
+    const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderScheduleEditor(rows);
+  } catch (error) {
+    console.error(error);
+    document.getElementById("schedule-message").textContent = "تعذر تحميل جدول المدربة. تأكدي من قواعد Firestore.";
+    document.getElementById("schedule-message").className = "admin-message error";
+    document.getElementById("schedule-message").hidden = false;
+    renderScheduleEditor([]);
+  }
+}
+
+function scheduleMessage(message, type = "info") {
+  const box = document.getElementById("schedule-message");
+  if (!box) return;
+  box.textContent = message;
+  box.className = `admin-message ${type}`;
+  box.hidden = false;
+}
+
+async function saveTrainerSchedule() {
+  if (!currentScheduleTrainer) return;
+
+  const button = document.getElementById("save-trainer-schedule");
+  button.disabled = true;
+
+  try {
+    const batch = firebase.firestore().batch();
+    const ref = firebase.firestore()
+      .collection("staff").doc(currentScheduleTrainer.uid).collection("schedule");
+
+    const old = await ref.get();
+    old.forEach(doc => batch.delete(doc.ref));
+
+    const cards = document.querySelectorAll(".schedule-day-card");
+    let count = 0;
+
+    cards.forEach(card => {
+      const day = Number(card.dataset.day);
+      card.querySelectorAll(".schedule-slot").forEach(slot => {
+        const time = slot.querySelector(".schedule-time").value.trim();
+        const className = slot.querySelector(".schedule-class").value;
+        if (!time || !className) return;
+
+        const docRef = ref.doc();
+        batch.set(docRef, {
+          day,
+          dayName: TRAINER_DAYS.find(d => d.id === day)?.name || "",
+          time,
+          className,
+          active: true
+        });
+        count++;
+      });
+    });
+
+    await batch.commit();
+    scheduleMessage(`تم حفظ جدول ${currentScheduleTrainer.name || "المدربة"} بنجاح ✓ (${count} كلاس أسبوعيًا)`, "success");
+  } catch (error) {
+    console.error(error);
+    scheduleMessage("تعذر حفظ الجدول. تأكدي من قواعد Firestore ثم حاولي مرة أخرى.", "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// Replace the trainer list rendering so each trainer opens her schedule.
+const originalLoadTrainers = loadTrainers;
+loadTrainers = async function() {
+  await originalLoadTrainers();
+  const list = document.getElementById("trainers-list");
+  if (!list) return;
+  list.querySelectorAll(".trainer-row").forEach((row, index) => {
+    const trainer = allTrainers[index];
+    if (!trainer) return;
+    row.classList.add("schedule-open");
+    row.title = "اضغطي لفتح جدول المدربة";
+    row.addEventListener("click", () => openTrainerSchedule(trainer.uid));
+  });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("close-trainer-schedule");
+  const saveBtn = document.getElementById("save-trainer-schedule");
+  if (closeBtn) closeBtn.addEventListener("click", () => {
+    document.getElementById("trainer-schedule-panel").hidden = true;
+    currentScheduleTrainer = null;
+  });
+  if (saveBtn) saveBtn.addEventListener("click", saveTrainerSchedule);
+});

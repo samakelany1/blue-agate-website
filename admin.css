@@ -273,3 +273,41 @@ button, input, select { font: inherit; }
 .trainer-row{cursor:default!important}
 .full-width{grid-column:1/-1}
 @media(max-width:650px){.card-heading-row,.panel-title-row{align-items:flex-start}.card-heading-row{flex-direction:column}.card-heading-row .compact-btn{width:100%}}
+
+/* Trainer weekly schedule */
+.trainer-schedule-panel{
+  margin-top:18px;padding:20px;border-radius:18px;
+  background:#f7fafb;border:1px solid rgba(34,185,194,.22)
+}
+.weekly-schedule-editor{display:grid;gap:12px;margin-top:18px}
+.schedule-day-card{
+  background:#fff;border:1px solid #e3ecef;border-radius:15px;padding:14px
+}
+.schedule-day-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px
+}
+.schedule-day-head h4{margin:0;color:#10283d;font-size:15px}
+.schedule-slots{display:grid;gap:8px}
+.schedule-slot{
+  display:grid;grid-template-columns:150px 1fr auto;gap:8px;align-items:center
+}
+.schedule-slot input,.schedule-slot select{
+  width:100%;padding:10px;border:1px solid #dce6eb;border-radius:10px;background:#fff
+}
+.schedule-slot button{
+  border:1px solid #ffd5d5;background:#fff5f5;color:#a33;border-radius:10px;
+  padding:9px 11px;cursor:pointer
+}
+.add-slot-btn{
+  margin-top:9px;border:1px dashed rgba(34,185,194,.5);background:#eefbf9;color:#08766f;
+  border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer
+}
+.schedule-save-actions{margin-top:16px}
+.trainer-row.schedule-open{cursor:pointer!important}
+@media(max-width:700px){
+  .schedule-slot{grid-template-columns:1fr 1fr auto}
+}
+@media(max-width:480px){
+  .schedule-slot{grid-template-columns:1fr}
+  .schedule-slot button{width:100%}
+}

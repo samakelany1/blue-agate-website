@@ -3,6 +3,7 @@
 
 let allMembers = [];
 let currentEditingUid = null;
+let allTrainers = [];
 
 function adminMessage(message, type = "info") {
   const box = document.getElementById("admin-login-message");
@@ -346,38 +347,6 @@ async function renewSubscription(type) {
   }
 }
 
-async function deleteAttendance(dateKey) {
-  if (!currentEditingUid || !dateKey) return;
-
-  const member = allMembers.find(m => m.uid === currentEditingUid);
-  const memberName = member?.name || "هذه العضوة";
-  const confirmed = window.confirm(`هل أنتِ متأكدة من حذف حضور ${memberName} بتاريخ ${dateKeyToArabic(dateKey)}؟\n\nسيتم حذف تسجيل الحضور لهذا اليوم نهائيًا.`);
-  if (!confirmed) return;
-
-  const buttons = document.querySelectorAll(".delete-attendance-btn");
-  buttons.forEach(btn => {
-    if (btn.dataset.dateKey === dateKey) btn.disabled = true;
-  });
-
-  try {
-    await firebase.firestore()
-      .collection("members")
-      .doc(currentEditingUid)
-      .collection("attendance")
-      .doc(dateKey)
-      .delete();
-
-    editorMessage(`تم حذف حضور ${memberName} بتاريخ ${dateKeyToArabic(dateKey)} ✓`, "success");
-    await loadMemberAttendance(currentEditingUid);
-  } catch (error) {
-    console.error(error);
-    editorMessage("تعذر حذف الحضور. تأكدي من صلاحيات Firestore.", "error");
-    buttons.forEach(btn => {
-      if (btn.dataset.dateKey === dateKey) btn.disabled = false;
-    });
-  }
-}
-
 async function loadMemberAttendance(uid) {
   const list = document.getElementById("editor-attendance-list");
   const total = document.getElementById("editor-attendance-total");
@@ -387,19 +356,91 @@ async function loadMemberAttendance(uid) {
     const dates = [];
     snapshot.forEach(doc => { const data = doc.data(); if (data.dateKey) dates.push(data.dateKey); });
     total.textContent = `${dates.length} حضور`;
-    list.innerHTML = dates.length ? dates.slice(0, 15).map(key => `
-      <div class="attendance-item">
-        <span>${dateKeyToArabic(key)} ✓</span>
-        <button class="delete-attendance-btn" type="button" data-date-key="${escapeHtml(key)}">حذف</button>
-      </div>
-    `).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
-
-    list.querySelectorAll(".delete-attendance-btn").forEach(button => {
-      button.addEventListener("click", () => deleteAttendance(button.dataset.dateKey));
-    });
+    list.innerHTML = dates.length ? dates.slice(0, 15).map(key => `<span>${dateKeyToArabic(key)} ✓</span>`).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
   } catch (error) {
     console.error(error);
     list.innerHTML = '<div class="mini-empty">تعذر تحميل سجل الحضور.</div>';
+  }
+}
+
+
+function trainerMessage(message, type = "info") {
+  const box = document.getElementById("add-trainer-message");
+  if (!box) return;
+  box.textContent = message;
+  box.className = `admin-message ${type}`;
+  box.hidden = false;
+}
+
+function openAddTrainer() {
+  document.getElementById("add-trainer").hidden = false;
+  document.getElementById("add-trainer-form").reset();
+  document.getElementById("add-trainer-message").hidden = true;
+  document.getElementById("add-trainer").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function createTrainerAccount(event) {
+  event.preventDefault();
+  const button = event.submitter;
+  if (button) button.disabled = true;
+  const name = document.getElementById("new-trainer-name").value.trim();
+  const email = document.getElementById("new-trainer-email").value.trim();
+  const password = document.getElementById("new-trainer-password").value;
+  const phone = document.getElementById("new-trainer-phone").value.trim();
+  let secondaryApp = null;
+  try {
+    trainerMessage("جاري إنشاء حساب المدربة...", "info");
+    secondaryApp = firebase.initializeApp(firebaseConfig, `trainerCreator_${Date.now()}`);
+    const result = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+    const uid = result.user.uid;
+    await firebase.firestore().collection("staff").doc(uid).set({
+      uid, name, email, phone, role: "trainer", active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    await secondaryApp.delete();
+    secondaryApp = null;
+    trainerMessage("تم إنشاء حساب المدربة بنجاح ✓", "success");
+    document.getElementById("add-trainer-form").reset();
+    await loadTrainers();
+  } catch (error) {
+    console.error(error);
+    if (secondaryApp) { try { await secondaryApp.delete(); } catch (_) {} }
+    const message = error.code === "auth/email-already-in-use"
+      ? "هذا البريد مستخدم بالفعل. استخدمي بريدًا مختلفًا."
+      : error.code === "auth/weak-password"
+        ? "كلمة المرور ضعيفة. استخدمي 6 أحرف على الأقل."
+        : "تعذر إنشاء حساب المدربة. تأكدي من قواعد Firestore.";
+    trainerMessage(message, "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function loadTrainers() {
+  const list = document.getElementById("trainers-list");
+  if (!list) return;
+  list.innerHTML = '<div class="empty-state">جاري تحميل المدربات...</div>';
+  try {
+    const snapshot = await firebase.firestore().collection("staff").where("role", "==", "trainer").get();
+    allTrainers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
+      .sort((a,b) => String(a.name || "").localeCompare(String(b.name || ""), "ar"));
+    if (!allTrainers.length) {
+      list.innerHTML = '<div class="empty-state">لا توجد مدربات مضافات حتى الآن.</div>';
+      return;
+    }
+    list.innerHTML = allTrainers.map(trainer => `
+      <div class="member-row trainer-row">
+        <div class="member-main">
+          <strong>${escapeHtml(trainer.name || "بدون اسم")}</strong>
+          <span>${escapeHtml(trainer.email || "بدون بريد")}</span>
+        </div>
+        <div class="member-meta">
+          <span class="status-pill ${trainer.active === false ? "expired" : "active"}">${trainer.active === false ? "موقفة" : "مفعلة"}</span>
+        </div>
+      </div>`).join("");
+  } catch (error) {
+    console.error(error);
+    list.innerHTML = '<div class="empty-state error-state">تعذر تحميل المدربات. تأكدي من قواعد Firestore.</div>';
   }
 }
 
@@ -408,6 +449,7 @@ function showAdminPanel() {
   document.getElementById("admin-panel").hidden = false;
   document.getElementById("admin-logout").hidden = false;
   loadMembers();
+  loadTrainers();
 }
 
 function showAdminLogin() {
@@ -441,6 +483,9 @@ async function initAdmin() {
   document.getElementById("refresh-members").addEventListener("click", loadMembers);
   document.getElementById("member-form").addEventListener("submit", saveMember);
   document.getElementById("open-add-member").addEventListener("click", openAddMember);
+  document.getElementById("open-add-trainer").addEventListener("click", openAddTrainer);
+  document.getElementById("close-add-trainer").addEventListener("click", () => { document.getElementById("add-trainer").hidden = true; });
+  document.getElementById("add-trainer-form").addEventListener("submit", createTrainerAccount);
   document.getElementById("close-add-member").addEventListener("click", () => { document.getElementById("add-member").hidden = true; });
   document.getElementById("add-member-form").addEventListener("submit", createMemberAccount);
   document.getElementById("new-membership").addEventListener("change", updateNewEndDate);

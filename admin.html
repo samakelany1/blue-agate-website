@@ -81,6 +81,34 @@
         </div>
       </section>
 
+      <section class="admin-card trainer-management-card">
+        <div class="card-heading-row">
+          <div>
+            <div class="section-kicker">STAFF</div>
+            <h2>المدربات</h2>
+            <p class="muted-text">إضافة حسابات المدربات وإدارتها.</p>
+          </div>
+          <button id="open-add-trainer" class="primary-btn compact-btn" type="button">+ إضافة مدربة</button>
+        </div>
+
+        <div id="add-trainer" class="inline-form-panel" hidden>
+          <div class="panel-title-row">
+            <h3>إضافة مدربة جديدة</h3>
+            <button id="close-add-trainer" class="secondary-btn dark-btn" type="button">إغلاق</button>
+          </div>
+          <div id="add-trainer-message" class="admin-message" hidden></div>
+          <form id="add-trainer-form" class="member-form two-column-form">
+            <div class="field-group"><label for="new-trainer-name">اسم المدربة</label><input id="new-trainer-name" required></div>
+            <div class="field-group"><label for="new-trainer-email">البريد الإلكتروني</label><input id="new-trainer-email" type="email" required></div>
+            <div class="field-group"><label for="new-trainer-password">كلمة المرور</label><input id="new-trainer-password" type="password" minlength="6" required></div>
+            <div class="field-group"><label for="new-trainer-phone">رقم الجوال (اختياري)</label><input id="new-trainer-phone" type="tel"></div>
+            <div class="form-actions full-width"><button class="primary-btn" type="submit">إنشاء حساب المدربة</button></div>
+          </form>
+        </div>
+
+        <div id="trainers-list" class="members-list trainer-list"><div class="empty-state">جاري تحميل المدربات...</div></div>
+      </section>
+
       <section id="add-member" class="admin-card add-member-card" hidden>
         <div class="section-head">
           <div>

@@ -88,13 +88,13 @@
             <h2>المدربات</h2>
             <p class="muted-text">إضافة حسابات المدربات وإدارتها.</p>
           </div>
-          <button id="open-add-trainer" class="primary-btn compact-btn" type="button">+ إضافة مدربة</button>
+          <button id="open-add-trainer" class="primary-btn compact-btn" type="button" onclick="openAddTrainer()">+ إضافة مدربة</button>
         </div>
 
         <div id="add-trainer" class="inline-form-panel" hidden>
           <div class="panel-title-row">
             <h3>إضافة مدربة جديدة</h3>
-            <button id="close-add-trainer" class="secondary-btn dark-btn" type="button">إغلاق</button>
+            <button id="close-add-trainer" class="secondary-btn dark-btn" type="button" onclick="document.getElementById('add-trainer').hidden = true;">إغلاق</button>
           </div>
           <div id="add-trainer-message" class="admin-message" hidden></div>
           <form id="add-trainer-form" class="member-form two-column-form">
@@ -228,6 +228,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=20260916-2"></script>
 </body>
 </html>

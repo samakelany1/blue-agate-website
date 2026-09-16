@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /members/{userId} {
+      // إنشاء سجل العضوة عند إنشاء الحساب
+      allow create: if request.auth != null
+                    && request.auth.uid == userId;
+
+      // العضوة تستطيع قراءة بيانات حسابها فقط
+      allow read: if request.auth != null
+                   && request.auth.uid == userId;
+
+      // العضوة تستطيع تعديل الاسم ورقم الجوال فقط.
+      // بيانات الاشتراك لا تعدل من حساب العضوة.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['name', 'phone']);
+
+      match /attendance/{attendanceId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+    }
+  }
+}

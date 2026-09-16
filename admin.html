@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Blue Agate - لوحة تحكم النادي">
+  <title>Blue Agate | لوحة التحكم</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="admin-topbar">
+    <div>
+      <div class="admin-brand">BLUE AGATE</div>
+      <div class="admin-sub">FITNESS FOR WOMEN • ADMIN</div>
+    </div>
+    <button id="admin-logout" class="logout-btn" type="button" hidden>تسجيل الخروج</button>
+  </header>
+
+  <main class="admin-main">
+    <section id="admin-login-section" class="admin-card login-card">
+      <div class="admin-icon">🔐</div>
+      <h1>لوحة تحكم النادي</h1>
+      <p>هذه الصفحة مخصصة لإدارة بيانات المشتركات والاشتراكات.</p>
+
+      <div id="admin-login-message" class="admin-message" hidden></div>
+
+      <form id="admin-login-form" class="admin-form">
+        <label for="admin-email">البريد الإلكتروني</label>
+        <input id="admin-email" type="email" autocomplete="email" required>
+
+        <label for="admin-password">كلمة المرور</label>
+        <input id="admin-password" type="password" autocomplete="current-password" required>
+
+        <button class="primary-btn" type="submit">دخول لوحة التحكم</button>
+      </form>
+    </section>
+
+    <section id="admin-panel" hidden>
+      <div class="dashboard-head">
+        <div>
+          <p class="eyebrow">BLUE AGATE • DASHBOARD</p>
+          <h1>أهلًا بكِ في لوحة التحكم 👋🏻</h1>
+          <p>من هنا تديرين بيانات المشتركات والاشتراكات.</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span>👥</span>
+          <strong id="members-count">0</strong>
+          <small>إجمالي المشتركات</small>
+        </div>
+        <div class="stat-card">
+          <span>🟢</span>
+          <strong id="active-count">0</strong>
+          <small>اشتراكات نشطة</small>
+        </div>
+        <div class="stat-card">
+          <span>🔴</span>
+          <strong id="expired-count">0</strong>
+          <small>اشتراكات منتهية</small>
+        </div>
+      </div>
+
+      <section class="admin-card">
+        <div class="section-head">
+          <div>
+            <h2>المشتركات</h2>
+            <p>ابحثي بالاسم أو البريد أو رقم الجوال.</p>
+          </div>
+          <button id="refresh-members" class="secondary-btn" type="button">تحديث</button>
+        </div>
+
+        <input id="member-search" class="search-input" type="search" placeholder="🔍 بحث عن عضوة...">
+
+        <div id="members-list" class="members-list">
+          <div class="empty-state">جاري تحميل المشتركات...</div>
+        </div>
+      </section>
+
+      <section id="member-editor" class="admin-card" hidden>
+        <div class="section-head">
+          <div>
+            <h2>بيانات العضوة</h2>
+            <p id="editing-member-id"></p>
+          </div>
+          <button id="close-editor" class="secondary-btn" type="button">إغلاق</button>
+        </div>
+
+        <div id="editor-message" class="admin-message" hidden></div>
+
+        <form id="member-form" class="member-form">
+          <input id="edit-uid" type="hidden">
+
+          <label for="edit-name">الاسم</label>
+          <input id="edit-name" type="text" required>
+
+          <label for="edit-email">البريد الإلكتروني</label>
+          <input id="edit-email" type="email">
+
+          <label for="edit-phone">رقم الجوال</label>
+          <input id="edit-phone" type="tel" placeholder="05xxxxxxxx">
+
+          <label for="edit-membership">نوع الاشتراك</label>
+          <select id="edit-membership">
+            <option value="">اختاري نوع الاشتراك</option>
+            <option value="شهر + أسبوع مجاني">شهر + أسبوع مجاني</option>
+            <option value="3 شهور + شهر مجاني">3 شهور + شهر مجاني</option>
+            <option value="اشتراك آخر">اشتراك آخر</option>
+          </select>
+
+          <label for="edit-start">بداية الاشتراك</label>
+          <input id="edit-start" type="date">
+
+          <label for="edit-end">نهاية الاشتراك</label>
+          <input id="edit-end" type="date">
+
+          <button class="primary-btn" type="submit">حفظ بيانات العضوة</button>
+        </form>
+
+        <div class="attendance-box">
+          <div>
+            <strong>📅 سجل الحضور</strong>
+            <span id="editor-attendance-total">0 حضور</span>
+          </div>
+          <div id="editor-attendance-list" class="mini-attendance-list"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

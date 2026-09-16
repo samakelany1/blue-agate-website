@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /admins/{adminId} {
+      // لا يمكن إنشاء أو تعديل صلاحيات الإدارة من الموقع.
+      // يتم إعداد admins/{UID} من Firebase Console.
+      allow read: if isAdmin() && request.auth.uid == adminId;
+      allow write: if false;
+    }
+
+    match /members/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+
+      // العضوة تعدل الاسم والجوال فقط، والإدارة تستطيع تعديل كل بيانات العضوة.
+      allow update: if isAdmin()
+                    || (
+                      signedIn()
+                      && request.auth.uid == userId
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['name', 'phone'])
+                    );
+
+      allow delete: if isAdmin();
+
+      match /attendance/{attendanceId} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+        allow write: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      }
+    }
+  }
+}

@@ -234,3 +234,29 @@ button, input, select { font: inherit; }
   .member-row { align-items: flex-start; flex-direction: column; }
   .member-meta { width: 100%; text-align: right; }
 }
+
+
+.section-actions { display:flex; align-items:center; gap:8px; }
+.compact-btn { margin-top:0; white-space:nowrap; }
+.dark-btn { color:#10283d; border-color:rgba(16,40,61,.15); background:#fff; }
+.dark-btn:hover { border-color:#22b9c2; }
+.add-member-card { border:1px solid rgba(34,185,194,.22); }
+.two-column-form { grid-template-columns:repeat(2,1fr); gap:14px; }
+.two-column-form > div { display:grid; gap:8px; }
+.two-column-form .full-width { grid-column:1 / -1; }
+.field-help { color:#647486; font-size:11px; line-height:1.6; }
+.renewal-box { margin-top:22px; padding:18px; border-radius:16px; background:#f5fbfc; border:1px solid rgba(34,185,194,.18); }
+.renewal-box > div:first-child { display:grid; gap:5px; margin-bottom:13px; }
+.renewal-box span { color:#647486; font-size:12px; }
+.renewal-actions { display:flex; flex-wrap:wrap; gap:9px; }
+.renew-btn { border:1px solid rgba(34,185,194,.35); background:#fff; color:#08766f; border-radius:11px; padding:10px 13px; font-weight:800; cursor:pointer; }
+.renew-btn:hover { border-color:#22b9c2; background:#eefbf9; }
+.renew-btn:disabled { opacity:.55; cursor:not-allowed; }
+@media (max-width:700px) {
+  .section-actions { width:100%; }
+  .compact-btn { flex:1; }
+  .two-column-form { grid-template-columns:1fr; }
+  .two-column-form .full-width { grid-column:auto; }
+  .renewal-actions { display:grid; grid-template-columns:1fr; }
+  .renew-btn { width:100%; }
+}

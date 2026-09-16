@@ -68,7 +68,10 @@
             <h2>المشتركات</h2>
             <p>ابحثي بالاسم أو البريد أو رقم الجوال.</p>
           </div>
-          <button id="refresh-members" class="secondary-btn" type="button">تحديث</button>
+          <div class="section-actions">
+            <button id="refresh-members" class="secondary-btn dark-btn" type="button">تحديث</button>
+            <button id="open-add-member" class="primary-btn compact-btn" type="button">+ إضافة مشتركة</button>
+          </div>
         </div>
 
         <input id="member-search" class="search-input" type="search" placeholder="🔍 بحث عن عضوة...">
@@ -76,6 +79,59 @@
         <div id="members-list" class="members-list">
           <div class="empty-state">جاري تحميل المشتركات...</div>
         </div>
+      </section>
+
+      <section id="add-member" class="admin-card add-member-card" hidden>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">NEW MEMBER</p>
+            <h2>إضافة مشتركة جديدة</h2>
+            <p>سيتم إنشاء حساب دخول لها تلقائيًا.</p>
+          </div>
+          <button id="close-add-member" class="secondary-btn dark-btn" type="button">إغلاق</button>
+        </div>
+
+        <div id="add-member-message" class="admin-message" hidden></div>
+
+        <form id="add-member-form" class="member-form two-column-form">
+          <div>
+            <label for="new-name">الاسم</label>
+            <input id="new-name" type="text" required>
+          </div>
+          <div>
+            <label for="new-email">البريد الإلكتروني</label>
+            <input id="new-email" type="email" required>
+          </div>
+          <div>
+            <label for="new-phone">رقم الجوال</label>
+            <input id="new-phone" type="tel" placeholder="05xxxxxxxx">
+          </div>
+          <div>
+            <label for="new-membership">نوع الاشتراك</label>
+            <select id="new-membership">
+              <option value="">اختاري نوع الاشتراك</option>
+              <option value="شهر + أسبوع مجاني">شهر + أسبوع مجاني</option>
+              <option value="3 شهور + شهر مجاني">3 شهور + شهر مجاني</option>
+              <option value="اشتراك آخر">اشتراك آخر</option>
+            </select>
+          </div>
+          <div>
+            <label for="new-start">بداية الاشتراك</label>
+            <input id="new-start" type="date">
+          </div>
+          <div>
+            <label for="new-end">نهاية الاشتراك</label>
+            <input id="new-end" type="date">
+          </div>
+          <div class="full-width">
+            <label for="new-password">كلمة مرور مؤقتة</label>
+            <input id="new-password" type="password" minlength="6" autocomplete="new-password" required placeholder="6 أحرف أو أكثر">
+            <small class="field-help">أعطي المشتركة كلمة المرور هذه لتسجيل الدخول، ويمكنها تغييرها لاحقًا.</small>
+          </div>
+          <div class="full-width">
+            <button class="primary-btn" type="submit">إنشاء المشتركة والحساب</button>
+          </div>
+        </form>
       </section>
 
       <section id="member-editor" class="admin-card" hidden>
@@ -117,6 +173,17 @@
 
           <button class="primary-btn" type="submit">حفظ بيانات العضوة</button>
         </form>
+
+        <div class="renewal-box">
+          <div>
+            <strong>🔄 تجديد الاشتراك</strong>
+            <span>التجديد يبدأ من اليوم التالي لنهاية الاشتراك الحالي.</span>
+          </div>
+          <div class="renewal-actions">
+            <button id="renew-month" class="renew-btn" type="button">تجديد شهر + أسبوع</button>
+            <button id="renew-three-months" class="renew-btn" type="button">تجديد 3 شهور + شهر</button>
+          </div>
+        </div>
 
         <div class="attendance-box">
           <div>

@@ -37,3 +37,20 @@
   .profile-info-grid { grid-template-columns:1fr; }
   .profile-header h2 { font-size:21px; }
 }
+
+
+/* Member QR attendance card */
+.member-qr-card {
+  margin: 0 0 22px;
+  padding: 20px;
+  border: 1px solid rgba(22, 158, 171, .18);
+  border-radius: 18px;
+  background: #f4fbfc;
+  text-align: center;
+}
+.member-qr-card h3 { margin: 0 0 7px; color: #10283d; font-size: 18px; font-weight: 900; }
+.member-qr-card p { margin: 0 0 14px; color: #647486; font-size: 13px; }
+.member-qr-code { display: flex; justify-content: center; align-items: center; min-height: 180px; }
+.member-qr-code canvas, .member-qr-code img { display: block; width: 180px; height: 180px; max-width: 100%; padding: 8px; background: #fff; border: 1px solid #e1eaee; border-radius: 12px; }
+#member-qr-status { display: block; margin-top: 10px; color: #647486; font-size: 12px; }
+@media (max-width: 520px) { .member-qr-card { padding: 16px; } }

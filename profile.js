@@ -11,11 +11,7 @@ function subscriptionStatus(endDateValue) {
   const end = toProfileDate(endDateValue);
 
   if (!end) {
-    return {
-      title: "بيانات الاشتراك غير مكتملة",
-      text: "راجعي النادي لتحديث بيانات اشتراكك.",
-      className: "subscription-unknown"
-    };
+    return { title: "بيانات الاشتراك غير مكتملة", text: "راجعي النادي لتحديث بيانات اشتراكك.", className: "subscription-unknown" };
   }
 
   const today = new Date();
@@ -24,31 +20,39 @@ function subscriptionStatus(endDateValue) {
   const days = Math.ceil((end - today) / 86400000);
 
   if (days < 0) {
-    return {
-      title: "اشتراكك منتهي",
-      text: "يمكنكِ تجديد اشتراكك من النادي.",
-      className: "subscription-expired"
-    };
+    return { title: "اشتراكك منتهي", text: "يمكنكِ تجديد اشتراكك من النادي.", className: "subscription-expired" };
   }
-
   if (days <= 7) {
-    return {
-      title: "اشتراكك قريب من الانتهاء",
-      text: "إذا كنتِ ترغبين بالاستمرار، تواصلي مع النادي للتجديد.",
-      className: "subscription-warning"
-    };
+    return { title: "اشتراكك قريب من الانتهاء", text: "إذا كنتِ ترغبين بالاستمرار، تواصلي مع النادي للتجديد.", className: "subscription-warning" };
+  }
+  return { title: "اشتراكك نشط ✓", text: "اشتراكك فعال ويمكنكِ الاستفادة من خدمات النادي.", className: "subscription-active" };
+}
+
+function renderMemberQRCode(uid) {
+  const container = document.getElementById("member-qr-code");
+  const status = document.getElementById("member-qr-status");
+  if (!container || !status) return;
+  container.replaceChildren();
+
+  if (!uid) {
+    status.textContent = "تعذر تحديد حساب العضوية. سجّلي الدخول مجددًا.";
+    return;
+  }
+  if (typeof QRCode === "undefined") {
+    status.textContent = "تعذر تحميل رمز QR. حدّثي الصفحة أو تحققي من اتصال الإنترنت.";
+    return;
   }
 
-  return {
-    title: "اشتراكك نشط ✓",
-    text: "اشتراكك فعال ويمكنكِ الاستفادة من خدمات النادي.",
-    className: "subscription-active"
-  };
+  // This QR contains the Firebase Auth UID only; it is an identifier, not proof of identity.
+  new QRCode(container, { text: uid, width: 180, height: 180, colorDark: "#10283d", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  status.textContent = "اعرضي الرمز عند الاستقبال. لا يثبت الرمز وحده هوية حاملته.";
 }
 
 async function loadMemberProfile() {
   const user = firebase.auth().currentUser;
   if (!user) return;
+
+  renderMemberQRCode(user.uid);
 
   try {
     const doc = await firebase.firestore().collection("members").doc(user.uid).get();

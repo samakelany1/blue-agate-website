@@ -184,6 +184,13 @@
           <p id="subscription-status-text">أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.</p>
         </div>
 
+        <section class="member-qr-card" aria-label="رمز حضور العضوة">
+          <h3>رمز الحضور الخاص بكِ</h3>
+          <p>اعرضي هذا الرمز عند الاستقبال لتسجيل حضورك.</p>
+          <div id="member-qr-code" class="member-qr-code" aria-label="رمز QR الخاص بالعضوية"></div>
+          <small id="member-qr-status" role="status">جارٍ تجهيز رمز العضوية...</small>
+        </section>
+
         <div class="profile-info-grid">
           <div class="profile-info">
             <span>رقم الجوال</span>
@@ -231,6 +238,7 @@
   <script src="hours.js"></script>
   <script src="auth.js"></script>
   <script src="attendance.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="profile.js"></script>
   <script src="app-layout.js"></script>
 </body>

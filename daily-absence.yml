@@ -1,0 +1,28 @@
+name: Blue Agate Daily Absence Processing
+
+on:
+  schedule:
+    # 00:10 Asia/Riyadh = 21:10 UTC on the previous calendar day
+    - cron: '10 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  process-absences:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install --omit=dev
+      - name: Process daily absences
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: npm run process-absences

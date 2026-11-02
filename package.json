@@ -1,0 +1,9 @@
+{
+  "name": "blue-agate-daily-absence-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scheduled daily absence processing for Blue Agate Fitness via GitHub Actions",
+  "engines": { "node": ">=20" },
+  "scripts": { "process-absences": "node scripts/process-daily-absences.js" },
+  "dependencies": { "firebase-admin": "^13.0.0" }
+}

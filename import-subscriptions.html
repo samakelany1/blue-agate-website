@@ -23,16 +23,16 @@ function parseCSV(text){text=text.replace(/^\uFEFF/,'');const out=[];let row=[],
 function normalize(v){return String(v??'').trim();}
 function makePreview(){const missing=rows.filter(r=>!normalize(r.member_name)).length;const missingDates=rows.filter(r=>!normalize(r.activation_date)||!normalize(r.end_date)).length;const duplicatePageIds=rows.length-new Set(rows.map(r=>normalize(r.notion_member_page_id)).filter(Boolean)).size;const stats=[['إجمالي الصفوف',rows.length],['بدون اسم',missing],['تواريخ ناقصة',missingDates],['تكرار معرّف صفحة نوشن',duplicatePageIds]];$('stats').innerHTML=stats.map(([k,v])=>`<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');$('previewRows').innerHTML=rows.slice(0,100).map(r=>`<tr><td>${esc(r.source_row)}</td><td>${esc(r.member_name||'—')}</td><td>${esc(r.subscription_type||'—')}</td><td>${esc(r.subscription_date||'—')}</td><td>${esc(r.activation_date||'—')}</td><td>${esc(r.end_date||'—')}</td><td>${esc(r.status_source||'—')}</td></tr>`).join('');if(rows.length>100)$('previewRows').insertAdjacentHTML('beforeend',`<tr><td colspan="7">تظهر أول 100 صف فقط في المعاينة. سيتم تضمين كل الصفوف (${rows.length}) عند الاستيراد.</td></tr>`);$('previewCard').classList.remove('hidden');$('confirmImport').checked=false;$('importBtn').disabled=true;}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function arabicHeaderKey(value){return String(value||'').replace(/[\\uFE0F\\u200E\\u200F]/g,'').replace(/\\s+/g,' ').trim();}
+function arabicHeaderKey(value){return String(value||'').replace(/[\uFE0F\u200E\u200F]/g,'').replace(/\s+/g,' ').trim();}
 function mapNotionRow(r,index){
   const keys=Object.keys(r);const find=(patterns)=>{for(const k of keys){const nk=arabicHeaderKey(k);if(patterns.some(p=>nk===p||nk.includes(p)))return normalize(r[k]);}return '';};
-  const relation=find(['👤 المشتركة','المشتركة']);const url=(relation.match(/https?:\\/\\/[^\\s)]+/)||[])[0]||'';
-  const pageId=((url.match(/\\/p\\/([a-f0-9]{32})/i)||[])[1])||((relation.match(/([a-f0-9]{32})/i)||[])[1])||'';
-  const memberName=find(['الاسم']) || relation.replace(/\\s*\\(https?:.*$/,'').trim();
+  const relation=find(['👤 المشتركة','المشتركة']);const url=(relation.match(/https?:\/\/[^\s)]+/)||[])[0]||'';
+  const pageId=((url.match(/\/p\/([a-f0-9]{32})/i)||[])[1])||((relation.match(/([a-f0-9]{32})/i)||[])[1])||'';
+  const memberName=find(['الاسم']) || relation.replace(/\s*\(https?:.*$/,'').trim();
   return {
     source_row:String(index+2),
     member_name:memberName,
-    notion_member_name:relation.replace(/\\s*\\(https?:.*$/,'').trim()||memberName,
+    notion_member_name:relation.replace(/\s*\(https?:.*$/,'').trim()||memberName,
     notion_member_page_id:pageId,
     subscription_type:find(['🗂️ نوع الاشتراك','نوع الاشتراك']),
     subscription_date:find(['📅 تاريخ الاشتراك','تاريخ الاشتراك']),

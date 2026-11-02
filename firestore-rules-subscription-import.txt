@@ -1,0 +1,18 @@
+// MERGE THIS MATCH BLOCK INTO YOUR EXISTING firestore.rules FILE.
+// Do NOT replace all existing rules with this snippet.
+// Allows only a verified admin document (admins/{uid} with role == "admin")
+// to read/create/update/delete imported subscription records.
+
+match /subscriptionRecords/{recordId} {
+  function signedIn() {
+    return request.auth != null;
+  }
+
+  function isAdmin() {
+    return signedIn()
+      && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin";
+  }
+
+  allow read, create, update, delete: if isAdmin();
+}

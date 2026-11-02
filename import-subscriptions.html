@@ -8,7 +8,7 @@
 </style></head>
 <body><div class="wrap">
 <header class="top"><h1>💳 استيراد اشتراكات نوشن</h1><p>أداة مراجعة واستيراد أولية لنادي Blue Agate. تعرض البيانات قبل الحفظ، وتحفظها كسجلات اشتراك مستقلة دون إنشاء حسابات دخول أو تعديل مستندات العضوات الحالية.</p></header>
-<section class="card"><div class="step"><span class="num">1</span><div><h3 style="margin:3px 0 8px">اختاري ملف CSV</h3><p class="small">استخدمي الملف الذي جهزناه من تصدير نوشن. يمكنك أيضًا اختيار ملف CSV آخر بنفس الأعمدة.</p></div></div>
+<section class="card"><div class="step"><span class="num">1</span><div><h3 style="margin:3px 0 8px">اختاري ملف CSV</h3><p class="small">اختاري ملف CSV الذي صدّرتِه مباشرة من جدول الاشتراكات في نوشن؛ الأداة تتعرّف على أسماء الأعمدة العربية تلقائيًا.</p></div></div>
 <label for="csvFile">ملف الاشتراكات</label><input id="csvFile" type="file" accept=".csv,text/csv"><div class="actions" style="margin-top:14px"><button class="primary" id="previewBtn" disabled>قراءة الملف ومعاينة البيانات</button><button class="secondary" id="sampleBtn" type="button">استخدام ملف CSV المرفق</button></div><div id="status" class="hidden"></div></section>
 <section class="card hidden" id="previewCard"><div class="step"><span class="num">2</span><div><h3 style="margin:3px 0 8px">مراجعة قبل الاستيراد</h3><p class="small">لا يتم تعديل مجموعة members ولا حسابات Firebase. سيُحفظ كل صف كاشتراك مستقل داخل subscriptionRecords.</p></div></div><div class="stats" id="stats"></div><div class="notice">تنبيه: السجلات التي ينقصها الاسم أو التاريخ محفوظة للمراجعة ولا تُحذف تلقائيًا. تكرار اسم المشتركة لا يعني دمج سجلاتها.</div><div class="tablewrap"><table><thead><tr><th>رقم الصف</th><th>اسم المشتركة</th><th>نوع الاشتراك</th><th>تاريخ الاشتراك</th><th>التفعيل</th><th>النهاية</th><th>الحالة من نوشن</th></tr></thead><tbody id="previewRows"></tbody></table></div><label class="confirm"><input id="confirmImport" type="checkbox"><span>راجعت المعاينة وأفهم أن هذه العملية ستضيف سجلات إلى <b>subscriptionRecords</b> في Firebase، ولن تعدّل بيانات العضوات الحالية. السجلات المستوردة ستحمل علامة مصدر Notion ومعرّف استيراد ثابت لتجنب تكرار الاستيراد.</span></label><div class="actions"><button id="importBtn" class="primary" disabled>استيراد السجلات إلى Firebase</button><button id="resetBtn" class="secondary">إلغاء وإعادة الاختيار</button></div></section>
 <section class="card"><h3>قبل استخدام الأداة</h3><ul class="small"><li>يجب تسجيل الدخول بحساب موجود في مجموعة <code>admins</code> ويحمل الحقل <code>role: "admin"</code>.</li><li>تحتاج مجموعة <code>subscriptionRecords</code> إلى قاعدة أمان تسمح للأدمن فقط بإنشاء وقراءة وتعديل هذه السجلات. ملف قواعد الأمان المرفق هو إضافة تُدمج مع قواعدك الحالية، وليس بديلًا عنها.</li><li>هذه المرحلة لا تربط سجل الاشتراك بحساب دخول تلقائيًا، ولا تفعل خصم أيام الحضور. هذا منفصل ويأتي بعد مراجعة نتائج الاستيراد.</li></ul></section>
@@ -23,7 +23,33 @@ function parseCSV(text){text=text.replace(/^\uFEFF/,'');const out=[];let row=[],
 function normalize(v){return String(v??'').trim();}
 function makePreview(){const missing=rows.filter(r=>!normalize(r.member_name)).length;const missingDates=rows.filter(r=>!normalize(r.activation_date)||!normalize(r.end_date)).length;const duplicatePageIds=rows.length-new Set(rows.map(r=>normalize(r.notion_member_page_id)).filter(Boolean)).size;const stats=[['إجمالي الصفوف',rows.length],['بدون اسم',missing],['تواريخ ناقصة',missingDates],['تكرار معرّف صفحة نوشن',duplicatePageIds]];$('stats').innerHTML=stats.map(([k,v])=>`<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');$('previewRows').innerHTML=rows.slice(0,100).map(r=>`<tr><td>${esc(r.source_row)}</td><td>${esc(r.member_name||'—')}</td><td>${esc(r.subscription_type||'—')}</td><td>${esc(r.subscription_date||'—')}</td><td>${esc(r.activation_date||'—')}</td><td>${esc(r.end_date||'—')}</td><td>${esc(r.status_source||'—')}</td></tr>`).join('');if(rows.length>100)$('previewRows').insertAdjacentHTML('beforeend',`<tr><td colspan="7">تظهر أول 100 صف فقط في المعاينة. سيتم تضمين كل الصفوف (${rows.length}) عند الاستيراد.</td></tr>`);$('previewCard').classList.remove('hidden');$('confirmImport').checked=false;$('importBtn').disabled=true;}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function readFile(file){const text=await file.text();const parsed=parseCSV(text);if(!parsed.length)throw Error('لم أجد صفوف بيانات في الملف.');const h=Object.keys(parsed[0]);const missing=expected.filter(k=>!h.includes(k));if(missing.length)throw Error('الأعمدة التالية غير موجودة: '+missing.join(', '));rows=parsed;fileName=file.name;makePreview();showStatus(`تمت قراءة ${rows.length} سجلًا من ${file.name}. لم يتم حفظ أي بيانات حتى الآن.`,'success');}
+function arabicHeaderKey(value){return String(value||'').replace(/[\\uFE0F\\u200E\\u200F]/g,'').replace(/\\s+/g,' ').trim();}
+function mapNotionRow(r,index){
+  const keys=Object.keys(r);const find=(patterns)=>{for(const k of keys){const nk=arabicHeaderKey(k);if(patterns.some(p=>nk===p||nk.includes(p)))return normalize(r[k]);}return '';};
+  const relation=find(['👤 المشتركة','المشتركة']);const url=(relation.match(/https?:\\/\\/[^\\s)]+/)||[])[0]||'';
+  const pageId=((url.match(/\\/p\\/([a-f0-9]{32})/i)||[])[1])||((relation.match(/([a-f0-9]{32})/i)||[])[1])||'';
+  const memberName=find(['الاسم']) || relation.replace(/\\s*\\(https?:.*$/,'').trim();
+  return {
+    source_row:String(index+2),
+    member_name:memberName,
+    notion_member_name:relation.replace(/\\s*\\(https?:.*$/,'').trim()||memberName,
+    notion_member_page_id:pageId,
+    subscription_type:find(['🗂️ نوع الاشتراك','نوع الاشتراك']),
+    subscription_date:find(['📅 تاريخ الاشتراك','تاريخ الاشتراك']),
+    activation_date:find(['▶️ تاريخ التفعيل','تاريخ التفعيل']),
+    end_date:find(['⏰ تاريخ نهاية الاشتراك','تاريخ نهاية الاشتراك']),
+    days_remaining_source:find(['📆 الايام المتبقية','الايام المتبقية']),
+    status_source:find(['📊 حالة الاشتراك','حالة الاشتراك']),
+    compensation_days:find(['🗓️ ايام التعويض','ايام التعويض']),
+    maintenance_days:find(['الصيانة']),
+    notes:find(['📝 ملاحظات','ملاحظات']),
+    raw_subscription_date:find(['📅 تاريخ الاشتراك','تاريخ الاشتراك']),
+    raw_activation_date:find(['▶️ تاريخ التفعيل','تاريخ التفعيل']),
+    raw_end_date:find(['⏰ تاريخ نهاية الاشتراك','تاريخ نهاية الاشتراك']),
+    member_key:pageId
+  };
+}
+async function readFile(file){const text=await file.text();const parsed=parseCSV(text);if(!parsed.length)throw Error('لم أجد صفوف بيانات في الملف.');const h=Object.keys(parsed[0]);const notionHeaders=h.some(k=>arabicHeaderKey(k).includes('تاريخ التفعيل'))&&h.some(k=>arabicHeaderKey(k).includes('نوع الاشتراك'));rows=notionHeaders?parsed.map(mapNotionRow):parsed;const actual=Object.keys(rows[0]||{});const missing=expected.filter(k=>!actual.includes(k));if(missing.length)throw Error('الأعمدة التالية غير موجودة: '+missing.join(', ')+'. تأكدي من اختيار تصدير جدول الاشتراكات من نوشن.');fileName=file.name;makePreview();showStatus(`تمت قراءة ${rows.length} سجلًا من ${file.name}. تم التعرّف على أعمدة نوشن العربية. لم يتم حفظ أي بيانات حتى الآن.`,'success');}
 $('csvFile').addEventListener('change',e=>{$('previewBtn').disabled=!(e.target.files&&e.target.files[0]);});$('previewBtn').addEventListener('click',async()=>{try{await readFile($('csvFile').files[0]);}catch(e){showStatus(e.message,'error');}});
 $('sampleBtn').addEventListener('click',async()=>{try{const r=await fetch('Blue_Agate_Subscription_Import_Review.csv');if(!r.ok)throw Error('ارفعي ملف CSV من جهازك؛ لم يتوفر الملف المرفق بجانب الصفحة.');const b=await r.blob();const f=new File([b],'Blue_Agate_Subscription_Import_Review.csv',{type:'text/csv'});await readFile(f);}catch(e){showStatus(e.message,'error');}});
 $('confirmImport').addEventListener('change',()=>{$('importBtn').disabled=!$('confirmImport').checked;});$('resetBtn').addEventListener('click',()=>{rows=[];$('csvFile').value='';$('previewCard').classList.add('hidden');$('status').classList.add('hidden');$('previewBtn').disabled=true;});

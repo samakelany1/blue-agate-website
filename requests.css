@@ -8,3 +8,5 @@
 .subscription-countdown #subscription-countdown-note { color: #60788a; font-size: 0.85rem; }
 .subscription-countdown-expired { background: #fff1f1; border-color: #f0caca; }
 .subscription-countdown-expired strong { color: #b83232; }
+
+.admin-renewal-requests-card{margin-top:20px}

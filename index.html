@@ -13,6 +13,11 @@
   <link rel="stylesheet" href="profile.css">
   <link rel="stylesheet" href="app-layout.css">
   <link rel="stylesheet" href="requests.css">
+<style>
+.subscription-countdown{--countdown-color:#15966b;display:flex;align-items:center;justify-content:center;gap:22px;margin:18px 0;padding:22px;border:1px solid var(--countdown-color);border-radius:22px;background:#f5fbf8;text-align:right;transition:.25s}
+.subscription-countdown.countdown-green{--countdown-color:#15966b;background:#f1faf6}.subscription-countdown.countdown-yellow{--countdown-color:#d5a300;background:#fffbed}.subscription-countdown.countdown-orange{--countdown-color:#e97820;background:#fff5ed}.subscription-countdown.countdown-red{--countdown-color:#d93636;background:#fff1f1}
+.countdown-circle-wrap{position:relative;flex:0 0 140px;width:140px;height:140px}.countdown-ring{width:140px;height:140px;transform:rotate(-90deg)}.countdown-ring-track,.countdown-ring-progress{fill:none;stroke-width:9}.countdown-ring-track{stroke:#e8edf0}.countdown-ring-progress{stroke:var(--countdown-color);stroke-linecap:round;stroke-dasharray:377;stroke-dashoffset:0;transition:stroke-dashoffset .45s,stroke .25s}.countdown-circle-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--countdown-color)}.countdown-circle-center strong{font-size:2rem;line-height:1.2}.countdown-circle-center span{font-size:.76rem;color:#64748b}.countdown-copy{display:flex;flex-direction:column;gap:7px;min-width:0}.countdown-label{font-size:.85rem;color:#64748b}#subscription-countdown-message{font-size:1.02rem;color:#173b57}#subscription-countdown-note{font-size:.83rem;color:#64748b}.renewal-request-btn{margin-top:7px;border:0;border-radius:12px;padding:11px 18px;background:#123b5a;color:#fff;font:inherit;font-weight:700;cursor:pointer;align-self:flex-start}.renewal-request-btn:disabled{opacity:.6;cursor:not-allowed}.renewal-request-message{font-size:.84rem;font-weight:700;color:#16805d}@media(max-width:560px){.subscription-countdown{flex-direction:column;text-align:center}.countdown-copy{align-items:center}.renewal-request-btn{align-self:center}}
+</style>
 </head>
 <body>
   <header class="topbar">
@@ -219,10 +224,21 @@
           <p id="subscription-status-text">أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.</p>
         </div>
 
-        <div id="subscription-countdown" class="subscription-countdown" aria-live="polite">
-          <span class="countdown-label">الأيام المتبقية في اشتراككِ</span>
-          <strong id="subscription-days-remaining">—</strong>
-          <span id="subscription-countdown-note">جارٍ تحميل بيانات الاشتراك...</span>
+        <div id="subscription-countdown" class="subscription-countdown countdown-green" aria-live="polite">
+          <div class="countdown-circle-wrap">
+            <svg class="countdown-ring" viewBox="0 0 140 140" role="img" aria-label="عداد الأيام المتبقية">
+              <circle class="countdown-ring-track" cx="70" cy="70" r="60"></circle>
+              <circle id="subscription-countdown-progress" class="countdown-ring-progress" cx="70" cy="70" r="60"></circle>
+            </svg>
+            <div class="countdown-circle-center"><strong id="subscription-days-remaining">—</strong><span>يوم متبقٍ</span></div>
+          </div>
+          <div class="countdown-copy">
+            <span class="countdown-label">رحلتكِ مستمرة مع Blue Agate</span>
+            <strong id="subscription-countdown-message">جارٍ تحميل بيانات اشتراككِ...</strong>
+            <span id="subscription-countdown-note">نحسب لكِ الأيام المتبقية في اشتراككِ.</span>
+            <button id="renewal-request-btn" class="renewal-request-btn" type="button" hidden>طلب تجديد الاشتراك</button>
+            <span id="renewal-request-message" class="renewal-request-message" role="status" hidden></span>
+          </div>
         </div>
 
         <section class="member-qr-card" aria-label="رمز حضور العضوة">

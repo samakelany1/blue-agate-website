@@ -1,75 +1,12 @@
-// Blue Agate - subscription days remaining (Asia/Riyadh)
-(function () {
-  function el(id) { return document.getElementById(id); }
-
-  function dateKeyInRiyadh(date) {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit"
-    }).formatToParts(date);
-    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
-    return `${values.year}-${values.month}-${values.day}`;
-  }
-
-  function toDate(value) {
-    if (!value) return null;
-    if (typeof value.toDate === "function") return value.toDate();
-    if (value instanceof Date) return value;
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  function dayNumber(key) {
-    const [year, month, day] = key.split("-").map(Number);
-    return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
-  }
-
-  async function updateCountdown(user) {
-    const number = el("subscription-days-remaining");
-    const note = el("subscription-countdown-note");
-    const box = el("subscription-countdown");
-    if (!number || !note || !box) return;
-    if (!user) {
-      number.textContent = "—";
-      note.textContent = "سجّلي الدخول لعرض مدة اشتراككِ.";
-      return;
-    }
-    try {
-      const snap = await firebase.firestore().collection("members").doc(user.uid).get();
-      if (!snap.exists) throw new Error("Member record not found");
-      const member = snap.data();
-      const endDate = toDate(member.endDate);
-      if (!endDate) {
-        number.textContent = "—";
-        note.textContent = "تاريخ انتهاء الاشتراك غير مسجل.";
-        return;
-      }
-      const todayKey = dateKeyInRiyadh(new Date());
-      const endKey = dateKeyInRiyadh(endDate);
-      const remaining = dayNumber(endKey) - dayNumber(todayKey);
-      if (remaining < 0) {
-        number.textContent = "0";
-        note.textContent = "انتهى اشتراككِ. راجعي الإدارة للتجديد.";
-        box.classList.add("subscription-countdown-expired");
-      } else if (remaining === 0) {
-        number.textContent = "اليوم";
-        note.textContent = "ينتهي اشتراككِ اليوم.";
-        box.classList.remove("subscription-countdown-expired");
-      } else {
-        number.textContent = `${remaining} يوم`;
-        note.textContent = `تاريخ انتهاء الاشتراك: ${new Intl.DateTimeFormat("ar-SA", {
-          timeZone: "Asia/Riyadh", year: "numeric", month: "long", day: "numeric"
-        }).format(endDate)}`;
-        box.classList.remove("subscription-countdown-expired");
-      }
-    } catch (error) {
-      console.error("Subscription countdown error:", error);
-      number.textContent = "—";
-      note.textContent = "تعذر تحميل مدة الاشتراك. حدّثي الصفحة.";
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    if (!window.firebase || !firebase.auth || !firebase.firestore) return;
-    firebase.auth().onAuthStateChanged(updateCountdown);
-  });
+// Blue Agate - circular subscription countdown and renewal request.
+(function(){
+ const $=id=>document.getElementById(id), TZ='Asia/Riyadh';
+ function key(d){const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${v.year}-${v.month}-${v.day}`;}
+ function num(k){const [y,m,d]=k.split('-').map(Number);return Math.floor(Date.UTC(y,m-1,d)/86400000);}
+ function date(v){if(!v)return null;if(v.toDate)return v.toDate();const d=new Date(v);return isNaN(d)?null:d;}
+ function state(box,s){box.classList.remove('countdown-green','countdown-yellow','countdown-orange','countdown-red');box.classList.add('countdown-'+s);}
+ function copy(left,total){if(left<0)return ['انتهى اشتراككِ، ننتظركِ لتكملي رحلتكِ معنا 💙','قدّمي طلب تجديد الاشتراك للعودة إلى التمرين.'];if(left<=7)return ['باقي القليل على نهاية اشتراككِ!','جدّدي اشتراككِ وكمّلي هدفكِ الرياضي دون انقطاع 💪'];if(left<=Math.ceil(total/2))return ['وصلتِ إلى منتصف رحلتكِ! 🌟','استمري، كل حصة تقرّبكِ أكثر من هدفكِ.'];return ['بداية جميلة، وهذه فرصتكِ لصناعة فرق! 💚','حافظي على حماسكِ والتزامكِ، هدفكِ يستحق.'];}
+ async function update(user){const box=$('subscription-countdown'),n=$('subscription-days-remaining'),note=$('subscription-countdown-note'),head=$('subscription-countdown-message'),ring=$('subscription-countdown-progress'),btn=$('renewal-request-btn');if(!box||!n||!note||!head)return;if(!user){n.textContent='—';head.textContent='سجّلي الدخول لعرض اشتراككِ.';note.textContent='';if(btn)btn.hidden=true;return;}try{const ref=firebase.firestore().collection('members').doc(user.uid),snap=await ref.get();if(!snap.exists)throw Error('Member missing');const m=snap.data(),end=date(m.endDate),start=date(m.startDate);if(!end){n.textContent='—';head.textContent='بيانات الاشتراك غير مكتملة';note.textContent='راجعي إدارة النادي لتحديث تاريخ الاشتراك.';if(btn)btn.hidden=true;return;}const today=key(new Date()),ek=key(end),left=num(ek)-num(today),sk=start?key(start):today,total=Math.max(1,num(ek)-num(sk)+1),elapsed=Math.max(0,num(today)-num(sk)),pct=Math.max(0,Math.min(1,elapsed/total));state(box,left<0?'red':left<=7?'orange':elapsed>=Math.ceil(total/2)?'yellow':'green');n.textContent=left<0?'0':left===0?'اليوم':String(left);const [h,msg]=copy(left,total);head.textContent=h;note.textContent=msg+' • نهاية الاشتراك: '+new Intl.DateTimeFormat('ar-SA',{timeZone:TZ,year:'numeric',month:'long',day:'numeric'}).format(end);if(ring)ring.style.strokeDashoffset=String(377*(1-pct));if(btn){btn.hidden=left>7;const pending=await ref.collection('renewalRequests').where('status','==','pending').limit(1).get();btn.disabled=!pending.empty;btn.textContent=pending.empty?'طلب تجديد الاشتراك':'طلب التجديد قيد المتابعة';}}
+ catch(e){console.error(e);n.textContent='—';head.textContent='تعذر تحميل بيانات الاشتراك';note.textContent='حدّثي الصفحة وحاولي مجددًا.';}}
+ document.addEventListener('DOMContentLoaded',()=>{if(!window.firebase||!firebase.auth||!firebase.firestore)return;firebase.auth().onAuthStateChanged(update);const btn=$('renewal-request-btn');if(btn)btn.addEventListener('click',async()=>{const user=firebase.auth().currentUser,msg=$('renewal-request-message');if(!user)return;btn.disabled=true;if(msg){msg.hidden=false;msg.textContent='جاري إرسال طلب التجديد...';}try{const ref=firebase.firestore().collection('members').doc(user.uid),snap=await ref.get(),m=snap.data()||{},pending=await ref.collection('renewalRequests').where('status','==','pending').limit(1).get();if(!pending.empty){if(msg)msg.textContent='لديكِ طلب تجديد قيد المتابعة بالفعل.';btn.textContent='طلب التجديد قيد المتابعة';return;}await ref.collection('renewalRequests').add({uid:user.uid,memberName:m.name||user.displayName||'',status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp(),currentEndDate:m.endDate||null});if(msg)msg.textContent='تم إرسال طلب التجديد للإدارة بنجاح.';btn.textContent='تم إرسال طلب التجديد';}catch(e){console.error(e);if(msg)msg.textContent='تعذر إرسال الطلب. حاولي مرة أخرى.';btn.disabled=false;}});});
 })();

@@ -154,10 +154,11 @@
           <div>
             <label for="new-membership">نوع الاشتراك</label>
             <select id="new-membership">
-              <option value="">اختاري نوع الاشتراك</option>
-              <option value="شهر + أسبوع مجاني">شهر + أسبوع مجاني</option>
-              <option value="3 شهور + شهر مجاني">3 شهور + شهر مجاني</option>
-              <option value="اشتراك آخر">اشتراك آخر</option>
+              <option value="">اختاري مدة الاشتراك</option>
+              <option value="شهر">شهر</option>
+              <option value="شهرين">شهرين</option>
+              <option value="3 شهور">3 شهور</option>
+              <option value="4 شهور">4 شهور</option>
             </select>
           </div>
           <div>
@@ -204,10 +205,11 @@
 
           <label for="edit-membership">نوع الاشتراك</label>
           <select id="edit-membership">
-            <option value="">اختاري نوع الاشتراك</option>
-            <option value="شهر + أسبوع مجاني">شهر + أسبوع مجاني</option>
-            <option value="3 شهور + شهر مجاني">3 شهور + شهر مجاني</option>
-            <option value="اشتراك آخر">اشتراك آخر</option>
+            <option value="">اختاري مدة الاشتراك</option>
+              <option value="شهر">شهر</option>
+              <option value="شهرين">شهرين</option>
+              <option value="3 شهور">3 شهور</option>
+              <option value="4 شهور">4 شهور</option>
           </select>
 
           <label for="edit-start">بداية الاشتراك</label>
@@ -225,8 +227,10 @@
             <span>التجديد يبدأ من اليوم التالي لنهاية الاشتراك الحالي.</span>
           </div>
           <div class="renewal-actions">
-            <button id="renew-month" class="renew-btn" type="button">تجديد شهر + أسبوع</button>
-            <button id="renew-three-months" class="renew-btn" type="button">تجديد 3 شهور + شهر</button>
+            <button id="renew-one-month" class="renew-btn" type="button">تجديد شهر</button>
+            <button id="renew-two-months" class="renew-btn" type="button">تجديد شهرين</button>
+            <button id="renew-three-months" class="renew-btn" type="button">تجديد 3 شهور</button>
+            <button id="renew-four-months" class="renew-btn" type="button">تجديد 4 شهور</button>
           </div>
         </div>
 
@@ -245,6 +249,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20260916-2"></script>
+  <script src="admin.js?v=20261104-1"></script>
 </body>
 </html>

@@ -219,6 +219,12 @@
           <p id="subscription-status-text">أضيفي تاريخ انتهاء الاشتراك من لوحة النادي.</p>
         </div>
 
+        <div id="subscription-countdown" class="subscription-countdown" aria-live="polite">
+          <span class="countdown-label">الأيام المتبقية في اشتراككِ</span>
+          <strong id="subscription-days-remaining">—</strong>
+          <span id="subscription-countdown-note">جارٍ تحميل بيانات الاشتراك...</span>
+        </div>
+
         <section class="member-qr-card" aria-label="رمز حضور العضوة">
           <h3>رمز الحضور الخاص بكِ</h3>
           <p>اعرضي هذا الرمز عند الاستقبال لتسجيل حضورك.</p>
@@ -275,6 +281,7 @@
   <script src="attendance.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="profile.js"></script>
+  <script src="subscription-countdown.js"></script>
   <script src="app-layout.js"></script>
   <script src="requests-member.js"></script>
   <script src="requests-navigation.js"></script>

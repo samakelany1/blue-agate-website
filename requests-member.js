@@ -50,6 +50,43 @@
     </article>`;
   }
 
+  function monthBoundsKsa() {
+    const key = localDateKey();
+    const [year, month] = key.split("-").map(Number);
+    // KSA is UTC+3; month boundaries are KSA midnight.
+    return {
+      start: new Date(Date.UTC(year, month - 1, 1) - 3 * 60 * 60 * 1000),
+      end: new Date(Date.UTC(year, month, 1) - 3 * 60 * 60 * 1000)
+    };
+  }
+
+  async function getMonthlyRequestCount(memberRef) {
+    const bounds = monthBoundsKsa();
+    const db = firebase.firestore();
+    const snap = await memberRef.collection("absenceRequests")
+      .where("createdAt", ">=", firebase.firestore.Timestamp.fromDate(bounds.start))
+      .where("createdAt", "<", firebase.firestore.Timestamp.fromDate(bounds.end))
+      .get();
+    return snap.size;
+  }
+
+  async function refreshMonthlyLimit(memberRef) {
+    const counter = el("absence-monthly-counter");
+    const submit = el("absence-submit-btn");
+    if (!counter) return 0;
+    const count = await getMonthlyRequestCount(memberRef);
+    counter.textContent = `استخدمتِ ${count} من 7 طلبات غياب هذا الشهر`;
+    const reached = count >= 7;
+    if (submit) {
+      submit.disabled = reached;
+      submit.textContent = reached ? "اكتمل الحد الشهري" : "إرسال طلب الغياب";
+    }
+    if (reached) {
+      showMessage("absence-request-message", "وصلتِ إلى الحد الأقصى لطلبات الغياب لهذا الشهر. يمكنكِ تقديم طلب جديد مع بداية الشهر القادم.", "error");
+    }
+    return count;
+  }
+
   async function loadMyRequests() {
     const user = firebase.auth().currentUser;
     const list = el("member-requests-list");
@@ -59,6 +96,7 @@
       const snap = await firebase.firestore().collection("members").doc(user.uid)
         .collection("absenceRequests").orderBy("createdAt", "desc").get();
       const items = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      await refreshMonthlyLimit(firebase.firestore().collection("members").doc(user.uid));
       list.innerHTML = items.length
         ? items.map(requestCardHtml).join("")
         : '<div class="request-empty">لا توجد طلبات حتى الآن.</div>';
@@ -84,6 +122,12 @@
       const memberRef = firebase.firestore().collection("members").doc(user.uid);
       const memberSnap = await memberRef.get();
       const member = memberSnap.exists ? memberSnap.data() : {};
+      const monthlyCount = await getMonthlyRequestCount(memberRef);
+      if (monthlyCount >= 7) {
+        await refreshMonthlyLimit(memberRef);
+        showMessage("absence-request-message", "وصلتِ إلى الحد الأقصى وهو 7 طلبات غياب خلال الشهر الميلادي. يمكنكِ تقديم طلب جديد مع بداية الشهر القادم.", "error");
+        return;
+      }
       await memberRef.collection("absenceRequests").add({
         uid: user.uid,
         memberName: member.name || user.displayName || "",

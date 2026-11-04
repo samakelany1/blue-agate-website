@@ -1,64 +1,173 @@
-/* Blue Agate reception QR check-in. Only users listed in admins/{uid} with role=admin may scan. */
+/* Blue Agate reception QR check-in. Reception access is restricted to admins/{uid} role=admin. */
 let scanner = null;
 let busy = false;
+let cameraRunning = false;
 const $ = id => document.getElementById(id);
-function showMessage(id, text, type='info') { const el=$(id); if(!el)return; el.textContent=text; el.className='message '+type; el.hidden=false; }
+
+function showMessage(id, text, type='info') {
+  const el=$(id); if(!el)return;
+  el.textContent=text; el.className='message '+type; el.hidden=false;
+}
 function dateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fromKey(k){ return new Date(`${k}T00:00:00`); }
 function nextDay(d){ const n=new Date(d); n.setDate(n.getDate()+1); return n; }
 function isFriday(d){ return d.getDay()===5; }
-function isClosedDate(key, member){ return Array.isArray(member.excludedAbsenceDates) && member.excludedAbsenceDates.includes(key); }
-async function isAdmin(user){ if(!user)return false; const snap=await firebase.firestore().collection('admins').doc(user.uid).get(); return snap.exists && snap.data().role==='admin'; }
-function setPanel(isIn){ $('login-card').hidden=isIn; $('scanner-card').hidden=!isIn; $('logout').hidden=!isIn; if(isIn) startScanner(); else stopScanner(); }
-async function startScanner(){ if(scanner || typeof Html5Qrcode==='undefined') return; scanner=new Html5Qrcode('reader'); try { await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}}, async text=>{ if(busy)return; await handleScan(text); }, ()=>{}); } catch(e){ showMessage('scan-message','تعذر تشغيل الكاميرا. تأكدي من السماح باستخدام الكاميرا أو أدخلي الرمز يدويًا.','error'); } }
-async function stopScanner(){ if(!scanner)return; try{ if(scanner.isScanning) await scanner.stop(); await scanner.clear(); }catch(e){} scanner=null; }
-async function handleScan(raw){ const uid=String(raw||'').trim(); if(!uid || uid.length>150){ showMessage('scan-message','الرمز غير صالح.','error'); return; } busy=true; try { const result=await registerCheckin(uid); const box=$('last-result'); box.hidden=false; box.className='result'+(result.ok?'':' bad'); box.innerHTML=''; const title=document.createElement('strong'); title.textContent=result.title; const detail=document.createElement('div'); detail.textContent=result.detail; box.append(title,detail); $('manual-uid').value=''; if(result.ok) showMessage('scan-message','تم تسجيل الحضور بنجاح.','success'); else showMessage('scan-message',result.title,'error'); } catch(e){ console.error(e); showMessage('scan-message','تعذر تسجيل الحضور. تحققي من الاتصال وصلاحيات Firebase.','error'); } finally { setTimeout(()=>{busy=false;},1600); } }
-async function registerCheckin(uid){
- const db=firebase.firestore(), today=new Date(), todayKey=dateKey(today), memberRef=db.collection('members').doc(uid), todayRef=memberRef.collection('attendance').doc(todayKey);
- return db.runTransaction(async tx=>{
-   const mSnap=await tx.get(memberRef); if(!mSnap.exists)return {ok:false,title:'العضوية غير موجودة',detail:'لم يتم العثور على حساب بهذه البطاقة.'};
-   const m=mSnap.data();
-   const adminUser=firebase.auth().currentUser; if(!adminUser) throw new Error('Not signed in');
-   const attToday=await tx.get(todayRef); if(attToday.exists)return {ok:false,title:'تم تسجيل الحضور اليوم',detail:`${m.name||'المشتركة'} لديها حضور مسجل لهذا اليوم.`};
-   if(m.active===false || m.membershipActive===false)return {ok:false,title:'العضوية موقوفة',detail:'راجعي الإدارة قبل السماح بالدخول.'};
-   let started=m.attendancePlanStartedAt ? (m.attendancePlanStartedAt.toDate ? m.attendancePlanStartedAt.toDate() : new Date(m.attendancePlanStartedAt)) : null;
-   let remaining=Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30;
-   let grace=Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7;
-   let last=m.attendanceLastProcessedDate || null;
-   if(!started){
-     started=new Date(today); started.setHours(0,0,0,0);
-     remaining=30; grace=7; last=todayKey;
-   } else {
-     // Reconcile all unprocessed dates up to yesterday. Friday and approved closure dates are excluded.
-     let cursor=last ? nextDay(fromKey(last)) : nextDay(started);
-     let iterations=0;
-     while(dateKey(cursor)<todayKey && iterations<370){
-       const key=dateKey(cursor);
-       if(!isFriday(cursor) && !isClosedDate(key,m)){
-         const oldRef=memberRef.collection('attendance').doc(key);
-         const oldSnap=await tx.get(oldRef);
-         // A date with attendance already consumed one basic day at check-in.
-         // Never deduct that same attended day again during reconciliation.
-         if(!oldSnap.exists){
-           if(grace>0) grace-=1;
-           else remaining=Math.max(0,remaining-1);
-         }
-       }
-       last=key; cursor=nextDay(cursor); iterations++;
-     }
-     if(iterations>=370) throw new Error('Attendance reconciliation exceeded safe range; admin review required.');
-   }
-   if(remaining<=0)return {ok:false,title:'انتهى رصيد أيام الحضور',detail:'لا يمكن تسجيل حضور جديد قبل تجديد الاشتراك من الإدارة.'};
-   // Today's attendance consumes one actual attendance day, never twice due to the date-key document ID.
-   remaining=Math.max(0,remaining-1);
-   tx.set(todayRef,{uid,dateKey:todayKey,timestamp:firebase.firestore.FieldValue.serverTimestamp(),source:'reception-qr'});
-   tx.set(memberRef,{attendancePlanStartedAt:firebase.firestore.Timestamp.fromDate(started),attendanceDaysRemaining:remaining,graceAbsenceDaysRemaining:grace,attendanceLastProcessedDate:todayKey,attendancePlanVersion:1},{merge:true});
-   return {ok:true,title:`تم تسجيل حضور ${m.name||'المشتركة'} ✓`,detail:`الرصيد الأساسي المتبقي: ${remaining} يومًا. أيام السماح المتبقية: ${grace}.`};
- });
+function toDate(value){
+  if(!value)return null;
+  const d=typeof value.toDate==='function'?value.toDate():new Date(value);
+  return Number.isNaN(d.getTime())?null:d;
 }
-$('login-form').addEventListener('submit',async e=>{e.preventDefault();try{await firebase.auth().signInWithEmailAndPassword($('email').value.trim(),$('password').value); }catch(err){showMessage('login-message','تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور.','error');}});
+function startOfDay(value){ const d=toDate(value); if(!d)return null; d.setHours(0,0,0,0); return d; }
+function formatDate(value){
+  const d=toDate(value); if(!d)return 'غير مسجل';
+  return d.toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'});
+}
+function isClosedDate(key, member){ return Array.isArray(member.excludedAbsenceDates) && member.excludedAbsenceDates.includes(key); }
+async function isAdmin(user){
+  if(!user)return false;
+  const snap=await firebase.firestore().collection('admins').doc(user.uid).get();
+  return snap.exists && snap.data().role==='admin';
+}
+function setCameraUi(running){
+  cameraRunning=running;
+  $('camera-toggle').textContent=running?'إيقاف الكاميرا':'تشغيل الكاميرا';
+  $('camera-status').textContent=running?'الكاميرا تعمل — وجّهيها نحو الرمز':'الكاميرا متوقفة';
+}
+function setPanel(isIn){
+  $('login-card').hidden=isIn; $('scanner-card').hidden=!isIn; $('logout').hidden=!isIn;
+  if(isIn) startScanner(); else stopScanner();
+}
+async function startScanner(){
+  if(cameraRunning)return;
+  if(typeof Html5Qrcode==='undefined'){
+    showMessage('scan-message','تعذر تحميل ماسح QR. استخدمي الإدخال اليدوي أو أعيدي تحميل الصفحة.','error');
+    $('camera-status').textContent='الماسح غير متاح'; return;
+  }
+  try{
+    if(!scanner)scanner=new Html5Qrcode('reader');
+    await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240},aspectRatio:1.0},async text=>{
+      if(busy)return;
+      await handleScan(text);
+    },()=>{});
+    setCameraUi(true);
+  }catch(e){
+    console.error('Camera start failed:',e);
+    setCameraUi(false);
+    showMessage('scan-message','تعذر تشغيل الكاميرا. اسمحي للمتصفح باستخدام الكاميرا، أو أدخلي رمز العضوية يدويًا.','error');
+  }
+}
+async function stopScanner(){
+  if(!scanner){setCameraUi(false);return;}
+  try{ if(scanner.isScanning)await scanner.stop(); await scanner.clear(); }catch(e){console.warn('Scanner stop:',e);}
+  scanner=null; setCameraUi(false);
+}
+async function toggleCamera(){
+  if(cameraRunning)await stopScanner();
+  else await startScanner();
+}
+function renderResult(result){
+  const box=$('last-result'); box.hidden=false; box.className='result-card'+(result.ok?'':' bad'); box.replaceChildren();
+  const head=document.createElement('div'); head.className='result-head';
+  const symbol=document.createElement('div'); symbol.className='result-symbol'; symbol.textContent=result.ok?'✓':'!';
+  const heading=document.createElement('div');
+  const title=document.createElement('div'); title.className='result-title'; title.textContent=result.title;
+  const subtitle=document.createElement('div'); subtitle.className='result-subtitle'; subtitle.textContent=result.detail||'';
+  heading.append(title,subtitle); head.append(symbol,heading); box.append(head);
+  if(result.member){
+    const grid=document.createElement('div'); grid.className='member-grid';
+    const fields=[
+      ['اسم العضوة',result.member.name||'غير مسجل'],
+      ['نوع الاشتراك',result.member.membershipType||'غير محدد'],
+      ['بداية الاشتراك',formatDate(result.member.startDate)],
+      ['نهاية الاشتراك',formatDate(result.member.endDate)],
+      ['أيام الحضور المتبقية',`${result.member.remaining} يوم`],
+      ['أيام السماح المتبقية',`${result.member.grace} يوم`]
+    ];
+    fields.forEach(([label,value])=>{
+      const item=document.createElement('div'); item.className='member-field';
+      const l=document.createElement('span'); l.textContent=label;
+      const v=document.createElement('strong'); v.textContent=value;
+      item.append(l,v); grid.append(item);
+    });
+    box.append(grid);
+  }
+}
+async function handleScan(raw){
+  const uid=String(raw||'').trim();
+  if(!uid || uid.length>150){showMessage('scan-message','الرمز غير صالح.','error');return;}
+  busy=true;
+  try{
+    const result=await registerCheckin(uid);
+    renderResult(result);
+    $('manual-uid').value='';
+    showMessage('scan-message',result.ok?'تم تسجيل الحضور بنجاح.':result.title,result.ok?'success':'error');
+  }catch(e){
+    console.error(e);
+    showMessage('scan-message','تعذر تسجيل الحضور. تحققي من الاتصال وصلاحيات Firebase.','error');
+  }finally{setTimeout(()=>{busy=false;},1800);}
+}
+async function registerCheckin(uid){
+  const db=firebase.firestore(), today=new Date(), todayKey=dateKey(today);
+  const memberRef=db.collection('members').doc(uid), todayRef=memberRef.collection('attendance').doc(todayKey);
+  return db.runTransaction(async tx=>{
+    const mSnap=await tx.get(memberRef);
+    if(!mSnap.exists)return {ok:false,title:'العضوية غير موجودة',detail:'لم يتم العثور على حساب بهذه البطاقة.'};
+    const m=mSnap.data();
+    if(!firebase.auth().currentUser)throw new Error('Not signed in');
+    const attToday=await tx.get(todayRef);
+    const memberInfo={name:m.name,membershipType:m.membershipType,startDate:m.startDate,endDate:m.endDate,remaining:Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30,grace:Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7};
+    if(attToday.exists)return {ok:false,title:'تم تسجيل الحضور اليوم',detail:`${m.name||'العضوة'} لديها حضور مسجل لهذا اليوم.`,member:memberInfo};
+    if(m.active===false || m.membershipActive===false)return {ok:false,title:'العضوية موقوفة',detail:'راجعي الإدارة قبل السماح بالدخول.',member:memberInfo};
+
+    const start=startOfDay(m.startDate), end=startOfDay(m.endDate), todayStart=startOfDay(today);
+    if(!start || !end)return {ok:false,title:'بيانات الاشتراك غير مكتملة',detail:'لا يوجد تاريخ بداية أو نهاية صالح للاشتراك. راجعي الإدارة.',member:memberInfo};
+    if(todayStart<start)return {ok:false,title:'لم يبدأ الاشتراك بعد',detail:`يبدأ الاشتراك بتاريخ ${formatDate(m.startDate)}.`,member:memberInfo};
+    if(todayStart>end)return {ok:false,title:'الاشتراك منتهٍ',detail:`انتهى الاشتراك بتاريخ ${formatDate(m.endDate)}. يلزم التجديد قبل الدخول.`,member:memberInfo};
+    if(isFriday(today))return {ok:false,title:'النادي مغلق يوم الجمعة',detail:'لا يمكن تسجيل حضور في يوم إغلاق النادي.',member:memberInfo};
+
+    let started=m.attendancePlanStartedAt?toDate(m.attendancePlanStartedAt):null;
+    let remaining=Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30;
+    let grace=Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7;
+    let last=m.attendanceLastProcessedDate||null;
+    if(!started){
+      started=new Date(today); started.setHours(0,0,0,0);
+      remaining=30; grace=7; last=todayKey;
+    }else{
+      let cursor=last?nextDay(fromKey(last)):nextDay(started);
+      let iterations=0;
+      while(dateKey(cursor)<todayKey && iterations<370){
+        const key=dateKey(cursor);
+        if(!isFriday(cursor)&&!isClosedDate(key,m)){
+          const oldRef=memberRef.collection('attendance').doc(key);
+          const oldSnap=await tx.get(oldRef);
+          if(!oldSnap.exists){if(grace>0)grace-=1;else remaining=Math.max(0,remaining-1);}
+        }
+        last=key; cursor=nextDay(cursor); iterations++;
+      }
+      if(iterations>=370)throw new Error('Attendance reconciliation exceeded safe range; admin review required.');
+    }
+    if(remaining<=0)return {ok:false,title:'انتهى رصيد أيام الحضور',detail:'لا يمكن تسجيل حضور جديد قبل تجديد الرصيد من الإدارة.',member:{...memberInfo,remaining,grace}};
+    remaining=Math.max(0,remaining-1);
+    tx.set(todayRef,{uid,dateKey:todayKey,timestamp:firebase.firestore.FieldValue.serverTimestamp(),source:'reception-qr'});
+    tx.set(memberRef,{attendancePlanStartedAt:firebase.firestore.Timestamp.fromDate(started),attendanceDaysRemaining:remaining,graceAbsenceDaysRemaining:grace,attendanceLastProcessedDate:todayKey,attendancePlanVersion:1},{merge:true});
+    return {ok:true,title:`تم تسجيل حضور ${m.name||'العضوة'} ✓`,detail:'تم اعتماد حضور اليوم وتحديث الرصيد.',member:{...memberInfo,remaining,grace}};
+  });
+}
+
+$('login-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{await firebase.auth().signInWithEmailAndPassword($('email').value.trim(),$('password').value);}
+  catch(err){showMessage('login-message','تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور.','error');}
+});
 $('logout').addEventListener('click',async()=>{await stopScanner();await firebase.auth().signOut();setPanel(false);});
+$('camera-toggle').addEventListener('click',toggleCamera);
 $('manual-submit').addEventListener('click',()=>handleScan($('manual-uid').value));
 $('manual-uid').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handleScan($('manual-uid').value);}});
 firebase.initializeApp(firebaseConfig);
-firebase.auth().onAuthStateChanged(async user=>{ if(!user){setPanel(false);return;} try{ if(await isAdmin(user)){setPanel(true);} else {await firebase.auth().signOut();setPanel(false);showMessage('login-message','هذا الحساب ليس لديه صلاحية الاستقبال.','error');} }catch(e){console.error(e);setPanel(false);showMessage('login-message','تعذر التحقق من الصلاحيات.','error');} });
+firebase.auth().onAuthStateChanged(async user=>{
+  if(!user){setPanel(false);return;}
+  try{
+    if(await isAdmin(user))setPanel(true);
+    else{await firebase.auth().signOut();setPanel(false);showMessage('login-message','هذا الحساب ليس لديه صلاحية الاستقبال.','error');}
+  }catch(e){console.error(e);setPanel(false);showMessage('login-message','تعذر التحقق من الصلاحيات.','error');}
+});

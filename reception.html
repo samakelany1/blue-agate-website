@@ -1,26 +1,81 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#153c4b">
   <meta name="description" content="تسجيل حضور مشتركات نادي العقيق الأزرق">
-  <title>Blue Agate | تسجيل الحضور</title><link rel="stylesheet" href="reception.css">
+  <title>Blue Agate | استقبال العضوات</title>
+  <link rel="stylesheet" href="reception.css">
 </head>
 <body>
-<header class="top"><div><strong>BLUE AGATE</strong><span>تسجيل حضور المشتركات</span></div><button id="logout" hidden>تسجيل الخروج</button></header>
-<main>
-  <section id="login-card" class="card">
-    <h1>دخول موظفة الاستقبال</h1><p>استخدمي حساب الإدارة المصرح له بمسح بطاقات العضوية.</p>
-    <div id="login-message" class="message" hidden></div>
-    <form id="login-form"><label for="email">البريد الإلكتروني</label><input id="email" type="email" required autocomplete="username"><label for="password">كلمة المرور</label><input id="password" type="password" required autocomplete="current-password"><button type="submit">دخول</button></form>
-  </section>
-  <section id="scanner-card" class="card" hidden>
-    <h1>مسح بطاقة العضوية</h1><p>وجّهي كاميرا الجهاز إلى رمز QR الظاهر في حساب المشتركة.</p>
-    <div id="scan-message" class="message" hidden></div><div id="reader"></div>
-    <div class="manual"><label for="manual-uid">إذا تعذّر المسح، أدخلي رمز الحساب يدويًا (UID)</label><input id="manual-uid" autocomplete="off" placeholder="رمز الحساب"><button id="manual-submit" type="button">التحقق وتسجيل الحضور</button></div>
-    <div id="last-result" class="result" hidden></div>
-    <p class="notice">لا تسجلي الحضور إلا بعد التأكد من أن صاحبة الحساب موجودة في النادي. الرمز وحده لا يثبت هوية حاملة الجوال.</p>
-  </section>
-</main>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script><script src="reception.js"></script>
-</body></html>
+  <header class="top">
+    <a class="brand" href="index.html" aria-label="نادي العقيق الأزرق">
+      <span class="brand-mark">BA</span>
+      <span class="brand-copy"><strong>BLUE AGATE</strong><small>FITNESS FOR WOMEN</small></span>
+    </a>
+    <div class="top-actions">
+      <span class="staff-label"><i></i> بوابة الاستقبال</span>
+      <button id="logout" class="logout" hidden>تسجيل الخروج</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section id="login-card" class="card login-card">
+      <div class="eyebrow">BLUE AGATE · STAFF ACCESS</div>
+      <h1>دخول موظفة الاستقبال</h1>
+      <p class="intro">سجّلي الدخول بالحساب المصرّح له لإدارة حضور العضوات.</p>
+      <div id="login-message" class="message" role="status" hidden></div>
+      <form id="login-form">
+        <label for="email">البريد الإلكتروني</label>
+        <input id="email" type="email" required autocomplete="username" placeholder="name@example.com">
+        <label for="password">كلمة المرور</label>
+        <input id="password" type="password" required autocomplete="current-password" placeholder="أدخلي كلمة المرور">
+        <button class="primary-btn" type="submit">تسجيل الدخول</button>
+      </form>
+    </section>
+
+    <section id="scanner-card" class="card scanner-card" hidden>
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">MEMBERS CHECK-IN</div>
+          <h1>تسجيل حضور العضوات</h1>
+          <p class="intro">وجّهي الكاميرا نحو رمز QR الموجود في بطاقة العضوية.</p>
+        </div>
+        <div class="live-indicator"><i></i> نظام الحضور</div>
+      </div>
+
+      <div id="scan-message" class="message" role="status" aria-live="polite" hidden></div>
+
+      <div class="scanner-panel">
+        <div class="scanner-topline"><span class="camera-icon">⌗</span><span>ماسح بطاقة العضوية</span></div>
+        <div class="reader-wrap"><div id="reader"></div><div class="scan-hint">ضعي رمز QR داخل إطار المسح</div></div>
+        <div class="scanner-controls">
+          <button id="camera-toggle" class="primary-btn" type="button">إيقاف الكاميرا</button>
+          <span id="camera-status" class="camera-status">جارٍ تجهيز الكاميرا…</span>
+        </div>
+      </div>
+
+      <div class="manual-panel">
+        <div class="manual-heading"><span class="manual-icon">#</span><div><h2>الإدخال اليدوي</h2><p>استخدميه إذا تعذّر مسح الرمز.</p></div></div>
+        <label for="manual-uid">رمز حساب العضوة (UID)</label>
+        <div class="manual-row">
+          <input id="manual-uid" autocomplete="off" placeholder="أدخلي رمز الحساب هنا">
+          <button id="manual-submit" class="primary-btn" type="button">تحقّق وسجّلي الحضور</button>
+        </div>
+      </div>
+
+      <div id="last-result" class="result-card" aria-live="polite" hidden></div>
+      <div class="security-note"><span>ⓘ</span><p>تأكدي من حضور صاحبة العضوية شخصيًا قبل التسجيل. رمز QR يعرّف الحساب ولا يثبت هوية حاملة الجوال.</p></div>
+    </section>
+    <footer>BLUE AGATE FITNESS FOR WOMEN <span>·</span> بوابة الاستقبال</footer>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="reception.js"></script>
+</body>
+</html>

@@ -74,6 +74,13 @@ function dateToInputDate(d) {
   return `${y}-${m}-${day}`;
 }
 
+function previousDateKey(dateString) {
+  const d = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() - 1);
+  return dateToInputDate(d);
+}
+
 function todayInputDate() {
   return dateToInputDate(new Date());
 }
@@ -215,10 +222,22 @@ async function saveMember(event) {
     const months = subscriptionMonths(data.membershipType);
     data.subscriptionMonths = months || null;
     data.absenceAllowanceDays = months ? months * 7 : 0;
+
     const start = document.getElementById("edit-start").value;
     const end = document.getElementById("edit-end").value;
+    const existingMember = allMembers.find(m => m.uid === currentEditingUid);
+    const subscriptionChanged = !existingMember ||
+      data.membershipType !== (existingMember.membershipType || "") ||
+      start !== firestoreDateToInput(existingMember.startDate) ||
+      end !== firestoreDateToInput(existingMember.endDate);
+
     data.startDate = start ? localDateToTimestamp(start) : null;
     data.endDate = end ? localDateToTimestamp(end, true) : null;
+
+    if (subscriptionChanged) {
+      data.absenceAllowanceDaysRemaining = data.absenceAllowanceDays;
+      data.attendanceLastProcessedDate = start ? previousDateKey(start) : null;
+    }
 
     await firebase.firestore().collection("members").doc(currentEditingUid).set(data, { merge: true });
     editorMessage("تم حفظ بيانات العضوة بنجاح ✓", "success");
@@ -285,6 +304,8 @@ async function createMemberAccount(event) {
       membershipType,
       subscriptionMonths: subscriptionMonths(membershipType) || null,
       absenceAllowanceDays: subscriptionMonths(membershipType) ? subscriptionMonths(membershipType) * 7 : 0,
+      absenceAllowanceDaysRemaining: subscriptionMonths(membershipType) ? subscriptionMonths(membershipType) * 7 : 0,
+      attendanceLastProcessedDate: start ? previousDateKey(start) : null,
       startDate: start ? localDateToTimestamp(start) : null,
       endDate: end ? localDateToTimestamp(end, true) : null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -340,6 +361,8 @@ async function renewSubscription(months) {
       membershipType: label,
       subscriptionMonths: months,
       absenceAllowanceDays: allowance,
+      absenceAllowanceDaysRemaining: allowance,
+      attendanceLastProcessedDate: previousDateKey(startString),
       startDate: localDateToTimestamp(startString),
       endDate: localDateToTimestamp(endString, true),
       lastRenewedAt: firebase.firestore.FieldValue.serverTimestamp()

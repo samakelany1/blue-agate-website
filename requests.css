@@ -1,12 +1,44 @@
 
-
-.absence-monthly-counter { margin: 10px 0; padding: 10px 14px; border-radius: 10px; background: #eef4f8; color: #173b57; font-size: 0.92rem; font-weight: 700; text-align: center; }
-.absence-monthly-counter.limit-reached { background: #fff0f0; color: #a83232; }
-.subscription-countdown { margin: 16px 0; padding: 18px; border: 1px solid #dce8ef; border-radius: 16px; background: #f3f8fb; display: grid; gap: 7px; text-align: center; }
-.subscription-countdown .countdown-label { color: #536b7d; font-size: 0.9rem; }
-.subscription-countdown strong { color: #123b5a; font-size: 2rem; line-height: 1.3; }
-.subscription-countdown #subscription-countdown-note { color: #60788a; font-size: 0.85rem; }
-.subscription-countdown-expired { background: #fff1f1; border-color: #f0caca; }
-.subscription-countdown-expired strong { color: #b83232; }
-
+/* Blue Agate member requests page */
+.member-requests-section{width:min(100%,1000px);margin:24px auto 40px;padding:0 18px;color:#123b5a}
+.requests-heading{margin:0 0 22px;text-align:right}
+.requests-kicker{margin:0 0 7px;color:#7890a3;font-size:.72rem;font-weight:800;letter-spacing:.12em}
+.requests-heading h2{margin:0 0 8px;color:#0b2d50;font-size:1.55rem;font-weight:800}
+.requests-heading>p:last-child{margin:0;color:#6b8294;line-height:1.8}
+.requests-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.request-card,.request-history-card{background:#fff;border:1px solid #e2ebf1;border-radius:20px;padding:24px;box-shadow:0 8px 28px rgba(18,59,90,.06)}
+.request-card{display:grid;gap:12px}
+.request-card h3,.request-history-card h3{margin:0;color:#123b5a;font-size:1.12rem}
+.request-card>p,.request-history-head p{margin:0;color:#718699;font-size:.9rem;line-height:1.8}
+.request-card label{color:#234d6c;font-size:.9rem;font-weight:700;margin-top:5px}
+.request-card input,.request-card textarea{width:100%;box-sizing:border-box;border:1px solid #d7e2ea;border-radius:12px;background:#fbfdfe;padding:12px 14px;color:#173b57;font:inherit;outline:none}
+.request-card input:focus,.request-card textarea:focus{border-color:#2c91b5;box-shadow:0 0 0 3px rgba(44,145,181,.12)}
+.request-card textarea{resize:vertical;min-height:88px}
+.request-submit,.request-refresh{border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:800;cursor:pointer;transition:.2s}
+.request-submit{background:#0b2d50;color:#fff;margin-top:4px}
+.request-submit:hover{background:#17466d}
+.request-submit:disabled{opacity:.55;cursor:not-allowed}
+.request-history-card{margin-top:20px}
+.request-history-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.request-history-head p{margin-top:5px}
+.request-refresh{background:#edf5f8;color:#17466d}
+.member-requests-list{display:grid;gap:12px}
+.member-request-item{border:1px solid #e5edf2;border-radius:14px;padding:15px;background:#fcfefe}
+.member-request-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.member-request-top strong{color:#123b5a}
+.member-request-item p{margin:9px 0 0;color:#647b8d;line-height:1.7;font-size:.9rem}
+.request-status{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font-size:.78rem;font-weight:800;white-space:nowrap}
+.status-pending{background:#fff5d9;color:#9a6b00}
+.status-approved{background:#e8f7ef;color:#16764d}
+.status-rejected{background:#fff0f0;color:#b83232}
+.request-review-note{padding-top:8px;border-top:1px solid #edf1f4}
+.request-empty{padding:22px;text-align:center;border:1px dashed #d7e2ea;border-radius:14px;color:#8093a2}
+.request-empty.error{color:#b83232}
+.request-message{padding:11px 13px;border-radius:11px;font-size:.88rem;line-height:1.6}
+.request-message.success{background:#eaf8f1;color:#16764d}
+.request-message.error{background:#fff0f0;color:#b83232}
+.request-message.info{background:#eef5fa;color:#17466d}
+.absence-monthly-counter{margin:8px 0;padding:10px 14px;border-radius:10px;background:#eef4f8;color:#173b57;font-size:.92rem;font-weight:700;text-align:center}
+.absence-monthly-counter.limit-reached{background:#fff0f0;color:#a83232}
+@media(max-width:600px){.member-requests-section{padding:0 12px}.request-card,.request-history-card{padding:17px}.request-history-head{align-items:flex-start}.request-history-head h3{font-size:1rem}}
 .admin-renewal-requests-card{margin-top:20px}

@@ -175,7 +175,7 @@
           <div class="requests-heading">
             <p class="requests-kicker">BLUE AGATE • MEMBER SERVICES</p>
             <h2>طلباتكِ</h2>
-            <p>قدّمي طلب غياب أو عذرًا طبيًا، وتابعي حالة المراجعة من هنا.</p>
+            <p>قدّمي طلب الغياب وتابعي حالة المراجعة من هنا.</p>
           </div>
 
           <div class="requests-grid">
@@ -188,22 +188,6 @@
               <textarea id="absence-reason" rows="3" maxlength="500" required placeholder="اكتبي سبب الغياب"></textarea>
               <div id="absence-request-message" class="request-message" hidden></div>
               <button class="request-submit" type="submit">إرسال طلب الغياب</button>
-            </form>
-
-            <form id="medical-request-form" class="request-card">
-              <h3>طلب عذر طبي</h3>
-              <p>أرفقي تقريرًا أو إجازة مرضية. لا يُعتمد العذر ولا تُضاف أيام التعويض إلا بعد موافقة الإدارة.</p>
-              <label for="medical-start-date">من تاريخ</label>
-              <input id="medical-start-date" type="date" required>
-              <label for="medical-end-date">إلى تاريخ</label>
-              <input id="medical-end-date" type="date" required>
-              <label for="medical-reason">التفاصيل</label>
-              <textarea id="medical-reason" rows="3" maxlength="500" required placeholder="اكتبي تفاصيل العذر"></textarea>
-              <label for="medical-attachment">التقرير الطبي أو الإجازة المرضية (صورة أو PDF)</label>
-              <input id="medical-attachment" type="file" accept="image/jpeg,image/png,application/pdf" required>
-              <small class="request-help">الحد الأقصى 5 ميجابايت. الصيغ المقبولة: JPG وPNG وPDF.</small>
-              <div id="medical-request-message" class="request-message" hidden></div>
-              <button class="request-submit" type="submit">إرسال العذر الطبي</button>
             </form>
           </div>
 
@@ -283,7 +267,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="script.js"></script>
   <script src="offers.js"></script>

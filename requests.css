@@ -42,3 +42,43 @@
 .absence-monthly-counter.limit-reached{background:#fff0f0;color:#a83232}
 @media(max-width:600px){.member-requests-section{padding:0 12px}.request-card,.request-history-card{padding:17px}.request-history-head{align-items:flex-start}.request-history-head h3{font-size:1rem}}
 .admin-renewal-requests-card{margin-top:20px}
+
+
+/* Admin request panels: Blue Agate visual system */
+.admin-requests-card,.admin-renewal-requests-card{direction:rtl}
+.admin-requests-card .section-head,.admin-renewal-requests-card .section-head{align-items:center;gap:18px}
+.request-filter-row{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 16px}
+.admin-request-filter,.admin-renewal-filter{appearance:none;border:1px solid #d8e4ec;background:#f5f9fb;color:#47647b;border-radius:999px;padding:9px 17px;font:inherit;font-size:.88rem;font-weight:700;cursor:pointer;transition:.2s}
+.admin-request-filter:hover,.admin-renewal-filter:hover{border-color:#7ca8c2;background:#edf5f9}
+.admin-request-filter.active,.admin-renewal-filter.active{background:#0b2d50;border-color:#0b2d50;color:#fff}
+.admin-requests-list{display:grid;gap:13px}
+.admin-request-item{background:#fbfdfe;border:1px solid #e1eaf0;border-radius:17px;padding:18px;margin:0;box-shadow:0 4px 14px rgba(15,50,75,.035)}
+.admin-request-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.admin-request-top>div{display:grid;gap:6px;min-width:0}
+.admin-request-top strong{color:#123b5a;font-size:1rem}
+.admin-request-member{display:block;color:#6c8192;font-size:.83rem;overflow-wrap:anywhere}
+.request-date,.admin-request-reason{margin:10px 0 0;color:#536d80;line-height:1.8;font-size:.9rem}
+.request-status{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:7px 12px;font-size:.78rem;font-weight:800;white-space:nowrap}
+.status-pending{background:#fff4d9;color:#946400}
+.status-approved,.status-renewed{background:#e7f7ef;color:#14764b}
+.status-rejected,.status-not-renewed{background:#fff0f0;color:#b33131}
+.admin-request-actions,.renewal-request-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+.admin-request-actions button,.renewal-request-actions button{border:0;border-radius:10px;padding:10px 16px;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}
+.approve-request-btn,.renewal-mark-done{background:#16865d;color:#fff}
+.reject-request-btn,.renewal-mark-no{background:#fff0f0;color:#b33131;border:1px solid #f1cccc!important}
+.renewal-open-member{background:#edf4f8;color:#17466a;border:1px solid #d6e3ec!important}
+.admin-request-actions button:disabled,.renewal-request-actions button:disabled{opacity:.55;cursor:not-allowed}
+.request-note-label,.renewal-admin-note-label{display:block;margin:13px 0 6px;color:#526b7d;font-size:.84rem;font-weight:700}
+.request-review-input,.renewal-admin-note{width:100%;box-sizing:border-box;border:1px solid #d9e4eb;border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:#173b57}
+.renewal-admin-note{resize:vertical;min-height:58px}
+.request-review-note{margin-top:10px;padding:10px 12px;background:#f2f7fa;border-radius:10px;color:#5c7181;font-size:.86rem}
+.renewal-request-item{display:grid;gap:8px}
+.renewal-member-info{display:grid;gap:5px}
+.renewal-uid{font-size:.78rem;color:#91a1ad}
+.renewal-request-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.renewal-request-meta span{display:grid;gap:5px;padding:11px 13px;border-radius:11px;background:#f1f6f9;color:#526d80;font-size:.87rem}
+.renewal-request-meta b{font-size:.75rem;color:#8799a7}
+.renewal-action-hint{margin:9px 0 0;color:#74899a;font-size:.8rem;line-height:1.7}
+.renewal-result-details{display:grid;gap:7px;margin-top:10px;padding:13px 15px;background:#f1f7f4;border-radius:12px;color:#4d6d5c;font-size:.85rem}
+.renewal-result-details strong{color:#16764d}
+@media(max-width:640px){.admin-requests-card .section-head,.admin-renewal-requests-card .section-head{align-items:stretch;flex-direction:column}.renewal-request-meta{grid-template-columns:1fr}.admin-request-top{flex-direction:column;align-items:flex-start}}

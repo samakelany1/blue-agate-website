@@ -195,6 +195,10 @@ async function openMemberEditor(uid) {
   document.getElementById("edit-membership").value = member.membershipType || "";
   document.getElementById("edit-start").value = firestoreDateToInput(member.startDate);
   document.getElementById("edit-end").value = firestoreDateToInput(member.endDate);
+  document.getElementById("activation-start-date").value = todayInputDate();
+  document.getElementById("renewal-start-date").value = todayInputDate();
+  document.getElementById("activation-duration").value = member.membershipType || "شهر";
+  document.getElementById("renewal-duration").value = member.membershipType || "شهر";
   editorMessage("", "info");
   document.getElementById("editor-message").hidden = true;
   await loadMemberAttendance(uid);
@@ -216,31 +220,10 @@ async function saveMember(event) {
     const data = {
       name: document.getElementById("edit-name").value.trim(),
       email: document.getElementById("edit-email").value.trim(),
-      phone: document.getElementById("edit-phone").value.trim(),
-      membershipType: document.getElementById("edit-membership").value
+      phone: document.getElementById("edit-phone").value.trim()
     };
-    const months = subscriptionMonths(data.membershipType);
-    data.subscriptionMonths = months || null;
-    data.absenceAllowanceDays = months ? months * 7 : 0;
-
-    const start = document.getElementById("edit-start").value;
-    const end = document.getElementById("edit-end").value;
-    const existingMember = allMembers.find(m => m.uid === currentEditingUid);
-    const subscriptionChanged = !existingMember ||
-      data.membershipType !== (existingMember.membershipType || "") ||
-      start !== firestoreDateToInput(existingMember.startDate) ||
-      end !== firestoreDateToInput(existingMember.endDate);
-
-    data.startDate = start ? localDateToTimestamp(start) : null;
-    data.endDate = end ? localDateToTimestamp(end, true) : null;
-
-    if (subscriptionChanged) {
-      data.absenceAllowanceDaysRemaining = data.absenceAllowanceDays;
-      data.attendanceLastProcessedDate = start ? previousDateKey(start) : null;
-    }
-
     await firebase.firestore().collection("members").doc(currentEditingUid).set(data, { merge: true });
-    editorMessage("تم حفظ بيانات العضوة بنجاح ✓", "success");
+    editorMessage("تم حفظ بيانات العضوة. تواريخ الاشتراك وأرصدتهما تُدار من زري التفعيل والتجديد.", "success");
     await loadMembers();
   } catch (error) {
     console.error(error);
@@ -255,19 +238,11 @@ function openAddMember() {
   document.getElementById("member-editor").hidden = true;
   document.getElementById("add-member").hidden = false;
   document.getElementById("add-member-form").reset();
-  document.getElementById("new-start").value = todayInputDate();
-  document.getElementById("new-end").value = "";
   addMemberMessage("", "info");
   document.getElementById("add-member-message").hidden = true;
   document.getElementById("add-member").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function updateNewEndDate() {
-  const start = document.getElementById("new-start").value;
-  const type = document.getElementById("new-membership").value;
-  const end = calculateEndDate(start, type);
-  if (end) document.getElementById("new-end").value = end;
-}
 
 async function createMemberAccount(event) {
   event.preventDefault();
@@ -278,8 +253,6 @@ async function createMemberAccount(event) {
   const email = document.getElementById("new-email").value.trim();
   const phone = document.getElementById("new-phone").value.trim();
   const membershipType = document.getElementById("new-membership").value;
-  const start = document.getElementById("new-start").value;
-  const end = document.getElementById("new-end").value;
   const password = document.getElementById("new-password").value;
 
   if (!name || !email || !password) {
@@ -303,18 +276,21 @@ async function createMemberAccount(event) {
       phone,
       membershipType,
       subscriptionMonths: subscriptionMonths(membershipType) || null,
-      absenceAllowanceDays: subscriptionMonths(membershipType) ? subscriptionMonths(membershipType) * 7 : 0,
-      absenceAllowanceDaysRemaining: subscriptionMonths(membershipType) ? subscriptionMonths(membershipType) * 7 : 0,
-      attendanceLastProcessedDate: start ? previousDateKey(start) : null,
-      startDate: start ? localDateToTimestamp(start) : null,
-      endDate: end ? localDateToTimestamp(end, true) : null,
+      absenceAllowanceDays: 7,
+      absenceAllowanceDaysRemaining: 7,
+      attendanceDaysRemaining: 30,
+      graceAbsenceDaysRemaining: 7,
+      attendancePlanStartedAt: null,
+      attendanceLastProcessedDate: null,
+      startDate: null,
+      endDate: null,
+      membershipActive: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
     if (secondaryApp) await secondaryApp.delete();
     addMemberMessage("تم إنشاء المشتركة وحساب الدخول بنجاح ✓", "success");
     document.getElementById("add-member-form").reset();
-    document.getElementById("new-start").value = todayInputDate();
     await loadMembers();
   } catch (error) {
     console.error(error);
@@ -332,51 +308,126 @@ async function createMemberAccount(event) {
   }
 }
 
-async function renewSubscription(months) {
+async function applySubscriptionCycle(mode) {
   if (!currentEditingUid) return;
   const member = allMembers.find(m => m.uid === currentEditingUid);
   if (!member) return;
-
-  const labels = { 1: "شهر", 2: "شهرين", 3: "3 شهور", 4: "4 شهور" };
-  const label = labels[months];
-  if (!label) return;
-
-  const startDate = nextRenewalStart(member);
-  const startString = dateToInputDate(startDate);
+  const isActivation = mode === "activation";
+  const startString = document.getElementById(isActivation ? "activation-start-date" : "renewal-start-date").value;
+  const label = document.getElementById(isActivation ? "activation-duration" : "renewal-duration").value;
+  const months = subscriptionMonths(label);
   const endString = calculateEndDate(startString, label);
-  if (!endString) {
-    editorMessage("تعذر حساب نهاية الاشتراك. اختاري مدة اشتراك صالحة.", "error");
+  if (!startString || !endString || !months) {
+    editorMessage("حددي تاريخ البداية ومدة اشتراك صحيحة.", "error");
     return;
   }
-
-  const allowance = months * 7;
-  const confirmed = window.confirm(`تجديد اشتراك ${member.name || "العضوة"} لمدة ${label}؟\n\nالبداية: ${formatDate(startString)}\nالنهاية: ${formatDate(endString)}\nرصيد الغياب المسموح: ${allowance} أيام`);
+  const actionLabel = isActivation ? "تفعيل" : "تجديد";
+  const confirmed = window.confirm(`${actionLabel} اشتراك ${member.name || "العضوة"}؟\n\nالبداية: ${startString}\nالنهاية: ${endString}\nرصيد الحضور: 30 يومًا\nأيام السماح: 7 أيام`);
   if (!confirmed) return;
-
-  const buttons = [...document.querySelectorAll(".renew-btn")];
-  buttons.forEach(btn => { btn.disabled = true; });
-
+  const buttons = [document.getElementById("activate-subscription-btn"), document.getElementById("renew-subscription-btn")].filter(Boolean);
+  buttons.forEach(btn => btn.disabled = true);
   try {
-    await firebase.firestore().collection("members").doc(currentEditingUid).set({
+    const db = firebase.firestore();
+    const memberRef = db.collection("members").doc(currentEditingUid);
+    const cycleId = `${currentEditingUid}_${Date.now()}`;
+    const cycleData = {
+      uid: currentEditingUid,
+      memberName: member.name || "",
+      type: mode,
       membershipType: label,
       subscriptionMonths: months,
-      absenceAllowanceDays: allowance,
-      absenceAllowanceDaysRemaining: allowance,
-      attendanceLastProcessedDate: previousDateKey(startString),
       startDate: localDateToTimestamp(startString),
       endDate: localDateToTimestamp(endString, true),
-      lastRenewedAt: firebase.firestore.FieldValue.serverTimestamp()
+      attendanceDaysInitial: 30,
+      attendanceDaysRemaining: 30,
+      graceAbsenceDaysInitial: 7,
+      graceAbsenceDaysRemaining: 7,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: firebase.auth().currentUser.uid
+    };
+    const batch = db.batch();
+    batch.set(memberRef, {
+      membershipType: label,
+      subscriptionMonths: months,
+      startDate: cycleData.startDate,
+      endDate: cycleData.endDate,
+      attendancePlanStartedAt: cycleData.startDate,
+      attendanceDaysRemaining: 30,
+      graceAbsenceDaysRemaining: 7,
+      absenceAllowanceDays: 7,
+      absenceAllowanceDaysRemaining: 7,
+      attendanceLastProcessedDate: previousDateKey(startString),
+      attendancePlanVersion: 2,
+      active: true,
+      membershipActive: true,
+      lastActivatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      ...(isActivation ? { lastActivatedBy: firebase.auth().currentUser.uid } : { lastRenewedAt: firebase.firestore.FieldValue.serverTimestamp(), lastRenewedBy: firebase.auth().currentUser.uid })
     }, { merge: true });
-
-    editorMessage(`تم تجديد الاشتراك بنجاح ✓ لمدة ${label}، من ${formatDate(startString)} إلى ${formatDate(endString)}. رصيد الغياب ${allowance} أيام.`, "success");
+    batch.set(db.collection("subscriptionRecords").doc(cycleId), cycleData);
+    await batch.commit();
+    editorMessage(`تم ${actionLabel} الاشتراك بنجاح ✓ من ${startString} إلى ${endString}. بدأ رصيد جديد: 30 يوم حضور و7 أيام سماح.`, "success");
     await loadMembers();
     await loadMemberAttendance(currentEditingUid);
   } catch (error) {
     console.error(error);
-    editorMessage("تعذر تجديد الاشتراك. تأكدي من صلاحيات Firestore.", "error");
+    editorMessage(`تعذر ${actionLabel} الاشتراك. تحققي من صلاحيات Firestore.`, "error");
   } finally {
-    buttons.forEach(btn => { btn.disabled = false; });
+    buttons.forEach(btn => btn.disabled = false);
   }
+}
+
+function closureMessage(message, type = "info") {
+  const box = document.getElementById("closure-message");
+  if (!box) return;
+  box.textContent = message;
+  box.className = `admin-message ${type}`;
+  box.hidden = false;
+}
+
+function keyDate(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
+
+async function saveClubClosure(event) {
+  event.preventDefault();
+  const startKey = document.getElementById("closure-start").value;
+  const endKey = document.getElementById("closure-end").value;
+  const closureType = document.getElementById("closure-type").value;
+  const note = document.getElementById("closure-note").value.trim();
+  if (!startKey || !endKey || endKey < startKey || startKey < todayInputDate()) { closureMessage("اختاري تاريخًا من اليوم أو بعده، وتأكدي من ترتيب البداية والنهاية.", "error"); return; }
+  const start = new Date(`${startKey}T00:00:00`), end = new Date(`${endKey}T00:00:00`);
+  const keys = [];
+  for (const d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+    keys.push(keyDate(d));
+    if (keys.length > 90) break;
+  }
+  if (!keys.length || keys.length > 90) { closureMessage("يمكن تسجيل 90 يوم إغلاق كحد أقصى في العملية الواحدة.", "error"); return; }
+  const button = event.submitter; if (button) button.disabled = true;
+  try {
+    const db = firebase.firestore();
+    for (let offset = 0; offset < keys.length; offset += 400) {
+      const batch = db.batch();
+      keys.slice(offset, offset+400).forEach(key => batch.set(db.collection("clubCalendar").doc(key), {
+        dateKey: key, closed: true, type: "closed", closureType, reason: note,
+        closureCreatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        closureCreatedBy: firebase.auth().currentUser.uid
+      }, { merge: true }));
+      await batch.commit();
+    }
+    closureMessage(`تم تسجيل ${keys.length} يوم إغلاق. سيُمدد النظام نهاية الاشتراكات المؤهلة يومًا عن كل يوم إغلاق، دون المساس برصيد 30 أو 7.`, "success");
+    document.getElementById("closure-form").reset();
+    await loadClubClosures();
+  } catch (error) {
+    console.error(error); closureMessage("تعذر حفظ الإغلاق. تحققي من صلاحيات Firestore.", "error");
+  } finally { if (button) button.disabled = false; }
+}
+
+async function loadClubClosures() {
+  const list = document.getElementById("closures-list");
+  if (!list) return;
+  try {
+    const snap = await firebase.firestore().collection("clubCalendar").limit(200).get();
+    const closed = snap.docs.filter(doc => doc.data().closed === true).sort((a,b) => b.id.localeCompare(a.id)).slice(0,20);
+    list.innerHTML = closed.length ? closed.map(doc => `<span>${escapeHtml(doc.id)} • ${escapeHtml(doc.data().reason || doc.data().closureType || "إغلاق النادي")}</span>`).join("") : '<span>لا توجد أيام إغلاق مسجلة.</span>';
+  } catch (error) { console.warn("Could not load closure dates", error); list.innerHTML = ""; }
 }
 
 async function loadMemberAttendance(uid) {
@@ -482,6 +533,7 @@ function showAdminPanel() {
   document.getElementById("admin-logout").hidden = false;
   loadMembers();
   loadTrainers();
+  loadClubClosures();
 }
 
 function showAdminLogin() {
@@ -520,12 +572,11 @@ async function initAdmin() {
   document.getElementById("add-trainer-form").addEventListener("submit", createTrainerAccount);
   document.getElementById("close-add-member").addEventListener("click", () => { document.getElementById("add-member").hidden = true; });
   document.getElementById("add-member-form").addEventListener("submit", createMemberAccount);
-  document.getElementById("new-membership").addEventListener("change", updateNewEndDate);
-  document.getElementById("new-start").addEventListener("change", updateNewEndDate);
-  document.getElementById("renew-one-month").addEventListener("click", () => renewSubscription(1));
-  document.getElementById("renew-two-months").addEventListener("click", () => renewSubscription(2));
-  document.getElementById("renew-three-months").addEventListener("click", () => renewSubscription(3));
-  document.getElementById("renew-four-months").addEventListener("click", () => renewSubscription(4));
+  document.getElementById("activate-subscription-btn").addEventListener("click", () => applySubscriptionCycle("activation"));
+  document.getElementById("renew-subscription-btn").addEventListener("click", () => applySubscriptionCycle("renewal"));
+  document.getElementById("closure-form").addEventListener("submit", saveClubClosure);
+  document.getElementById("closure-start").min = todayInputDate();
+  document.getElementById("closure-end").min = todayInputDate();
   document.getElementById("close-editor").addEventListener("click", () => { document.getElementById("member-editor").hidden = true; currentEditingUid = null; });
   document.getElementById("admin-logout").addEventListener("click", () => firebase.auth().signOut());
 

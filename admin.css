@@ -311,3 +311,9 @@ button, input, select { font: inherit; }
   .schedule-slot{grid-template-columns:1fr}
   .schedule-slot button{width:100%}
 }
+
+.subscription-actions-box .two-column-form { margin-top: 12px; }
+.subscription-actions-box .full-width { grid-column: 1 / -1; }
+.maintenance-card { border: 1px solid rgba(34,185,194,.22); }
+.maintenance-card .two-column-form { margin-top: 12px; }
+input[readonly] { background: #f3f7f9; color: #607080; }

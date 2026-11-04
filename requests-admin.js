@@ -110,17 +110,48 @@
         await loadRequests();
         return;
       }
-      await request.ref.update({
-        status,
-        reviewNote,
-        reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        reviewedBy: user.uid
+      const db = firebase.firestore();
+      const memberRef = db.collection("members").doc(request.uid);
+      await db.runTransaction(async tx => {
+        const [freshRequest, memberSnap] = await Promise.all([tx.get(request.ref), tx.get(memberRef)]);
+        if (!freshRequest.exists || (freshRequest.data().status || "pending") !== "pending") {
+          throw new Error("REQUEST_ALREADY_REVIEWED");
+        }
+        const requestData = freshRequest.data();
+        const update = {
+          status,
+          reviewNote,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: user.uid
+        };
+        const todayParts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+        const todayValues = Object.fromEntries(todayParts.map(p => [p.type, p.value]));
+        const todayKey = `${todayValues.year}-${todayValues.month}-${todayValues.day}`;
+        if (status === "approved" && memberSnap.exists) {
+          const member = memberSnap.data();
+          if (requestData.dateKey < todayKey && typeof member.attendanceLastProcessedDate === "string" && member.attendanceLastProcessedDate >= requestData.dateKey) {
+            throw new Error("ABSENCE_DATE_ALREADY_PROCESSED");
+          }
+          if (requestData.dateKey === todayKey) {
+            const attendanceSnap = await tx.get(memberRef.collection("attendance").doc(todayKey));
+            if (attendanceSnap.exists) throw new Error("MEMBER_ALREADY_ATTENDED");
+            const grace = Number.isFinite(member.graceAbsenceDaysRemaining) ? Math.max(0, member.graceAbsenceDaysRemaining) : 7;
+            if (grace > 0) tx.update(memberRef, { graceAbsenceDaysRemaining: grace - 1 });
+            update.balanceApplied = true;
+          }
+        }
+        tx.update(request.ref, update);
       });
-      showMessage(status === "approved" ? "تمت الموافقة على طلب الغياب." : "تم رفض طلب الغياب.", "success");
+      showMessage(status === "approved" ? "تمت الموافقة على طلب الغياب. خُصم اليوم من أيام السماح فقط، ولم يتغير رصيد الـ30 يومًا." : "تم رفض طلب الغياب.", "success");
       await loadRequests();
     } catch (error) {
       console.error("Review absence request error:", error);
-      showMessage("تعذرت مراجعة الطلب. تحققي من قواعد Firestore ثم حاولي مجددًا.", "error");
+      const message = error.message === "ABSENCE_DATE_ALREADY_PROCESSED"
+        ? "هذا التاريخ تمت معالجته بالفعل. لا يمكن اعتماد الطلب بأمان بعد إغلاق المعالجة اليومية."
+        : error.message === "MEMBER_ALREADY_ATTENDED"
+          ? "لا يمكن اعتماد غياب لهذا اليوم؛ يوجد حضور مسجل للعضوة بالفعل."
+          : "تعذرت مراجعة الطلب. تحققي من قواعد Firestore ثم حاولي مجددًا.";
+      showMessage(message, "error");
     }
   }
   function init() {

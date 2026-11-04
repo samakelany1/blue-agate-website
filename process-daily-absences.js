@@ -1,119 +1,240 @@
 const admin = require('firebase-admin');
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 const db = admin.firestore();
 const TZ = 'Asia/Riyadh';
+const MAX_DATES_PER_RUN = 30;
+
+// ======================================
+// DATE HELPERS
+// ======================================
 
 function keyForDate(date) {
-  // Build YYYY-MM-DD using the club's local timezone, not the server timezone.
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
   }).formatToParts(date);
+
   const part = Object.fromEntries(parts.map(p => [p.type, p.value]));
   return `${part.year}-${part.month}-${part.day}`;
 }
-function dateFromKey(key) { return new Date(`${key}T00:00:00Z`); }
-function addDays(key, count = 1) {
-  const d = dateFromKey(key);
-  d.setUTCDate(d.getUTCDate() + count);
-  return keyForDate(d);
+
+function dateFromKey(key) {
+  return new Date(`${key}T00:00:00.000Z`);
 }
-function weekdayForKey(key) { return dateFromKey(key).getUTCDay(); } // Friday = 5
+
+function addDays(key, count = 1) {
+  const date = dateFromKey(key);
+  date.setUTCDate(date.getUTCDate() + count);
+  return keyForDate(date);
+}
+
+function weekdayForKey(key) {
+  return dateFromKey(key).getUTCDay();
+}
+
 function asDate(value) {
   if (!value) return null;
   if (typeof value.toDate === 'function') return value.toDate();
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
-function arrayHas(arr, key) { return Array.isArray(arr) && arr.includes(key); }
+
+function dateKeyForTimestamp(value) {
+  const date = asDate(value);
+  return date ? keyForDate(date) : null;
+}
+
+// Firestore endDate is stored as the end of the day in Saudi Arabia (UTC+3).
+function timestampAtKsaEndOfDay(key) {
+  return admin.firestore.Timestamp.fromDate(
+    new Date(`${key}T20:59:59.999Z`)
+  );
+}
+
+function arrayHas(arr, key) {
+  return Array.isArray(arr) && arr.includes(key);
+}
+
+function isClubClosed(calendar) {
+  return calendar.closed === true || calendar.type === 'closed';
+}
+
+// Approved pause ranges are treated as approved medical/excused leave.
+function isApprovedPause(member, key) {
+  const ranges = Array.isArray(member.attendancePauseRanges)
+    ? member.attendancePauseRanges
+    : [];
+
+  return ranges.some(range =>
+    range &&
+    range.approved === true &&
+    typeof range.startDate === 'string' &&
+    typeof range.endDate === 'string' &&
+    range.startDate <= key &&
+    key <= range.endDate
+  );
+}
+
+// These dates are excluded from absence calculation without extending membership.
+function isExcluded(member, key) {
+  return arrayHas(member.excludedAbsenceDates, key) ||
+    arrayHas(member.attendancePauseDates, key);
+}
+
+function numericBalance(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : fallback;
+}
+
+// ======================================
+// PROCESS DAILY ABSENCES
+// ======================================
 
 async function processDailyAbsences() {
-  // At 00:10 KSA, process the calendar day that just ended.
-  const yesterdayKey = addDays(keyForDate(new Date()), -1);
+  const todayKey = keyForDate(new Date());
+  const yesterdayKey = addDays(todayKey, -1);
   const membersSnap = await db.collection('members').get();
   let processedMembers = 0, processedDates = 0, skippedMembers = 0, errors = 0;
 
   for (const memberDoc of membersSnap.docs) {
     try {
       const memberRef = memberDoc.ref;
-      await db.runTransaction(async tx => {
+      const result = await db.runTransaction(async tx => {
         const freshSnap = await tx.get(memberRef);
-        if (!freshSnap.exists) return;
+        if (!freshSnap.exists) return null;
         const member = freshSnap.data();
-        const startedAt = asDate(member.attendancePlanStartedAt);
-        let last = typeof member.attendanceLastProcessedDate === 'string'
-          ? member.attendanceLastProcessedDate : null;
+        if (member.active === false || member.membershipActive === false) return null;
 
-        // A membership's attendance plan begins only after its first successful scan.
-        if (!startedAt || !last) { skippedMembers++; return; }
-        if (member.active === false || member.membershipActive === false) { skippedMembers++; return; }
-        if (last >= yesterdayKey) { skippedMembers++; return; }
+        const startKey = dateKeyForTimestamp(member.startDate);
+        let endKey = dateKeyForTimestamp(member.endDate);
+        if (!startKey || !endKey) return null;
+        const last = typeof member.attendanceLastProcessedDate === 'string' ? member.attendanceLastProcessedDate : null;
+        if (!last) return null;
+        if (last >= yesterdayKey) return null;
 
-        let remaining = Number.isFinite(member.attendanceDaysRemaining) ? member.attendanceDaysRemaining : 30;
-        let grace = Number.isFinite(member.graceAbsenceDaysRemaining) ? member.graceAbsenceDaysRemaining : 7;
+        let attendanceRemaining = numericBalance(member.attendanceDaysRemaining, 30);
+        let graceRemaining = numericBalance(member.graceAbsenceDaysRemaining, 7);
         let cursor = addDays(last, 1);
-        const work = [];
-        let guard = 0;
-        while (cursor <= yesterdayKey && guard < 370) {
-          work.push(cursor);
-          cursor = addDays(cursor, 1);
-          guard++;
+        const dates = [];
+        while (cursor <= yesterdayKey && dates.length < MAX_DATES_PER_RUN) {
+          dates.push(cursor); cursor = addDays(cursor, 1);
         }
-        if (cursor <= yesterdayKey) throw new Error('More than 370 unprocessed dates; admin review required.');
+        if (!dates.length) return null;
 
-        // Complete all reads before writes, as required by Firestore transactions.
-        const attendanceRefs = work.map(key => memberRef.collection('attendance').doc(key));
-        const calendarRefs = work.map(key => db.collection('clubCalendar').doc(key));
         const attendanceSnaps = [];
         const calendarSnaps = [];
-        for (const ref of attendanceRefs) attendanceSnaps.push(await tx.get(ref));
-        for (const ref of calendarRefs) calendarSnaps.push(await tx.get(ref));
-
-        let lastProcessed = last;
-        let changedDates = 0;
-        for (let i = 0; i < work.length; i++) {
-          const key = work[i];
-          const day = dateFromKey(key);
-          const calendar = calendarSnaps[i].exists ? calendarSnaps[i].data() : {};
-          const closedGlobally = calendar.closed === true || calendar.type === 'closed';
-          const isPaused = arrayHas(member.excludedAbsenceDates, key)
-            || arrayHas(member.attendancePauseDates, key);
-          const pauseRanges = Array.isArray(member.attendancePauseRanges) ? member.attendancePauseRanges : [];
-          const inPauseRange = pauseRanges.some(r => r && typeof r.startDate === 'string' && typeof r.endDate === 'string' && r.startDate <= key && key <= r.endDate && r.approved === true);
-          const attended = attendanceSnaps[i].exists;
-          const isFriday = weekdayForKey(key) === 5;
-
-          if (!isFriday && !closedGlobally && !isPaused && !inPauseRange && !attended) {
-            if (grace > 0) grace -= 1;
-            else remaining = Math.max(0, remaining - 1);
-          }
-          lastProcessed = key;
-          changedDates++;
+        const approvedLeaveSnaps = [];
+        for (const key of dates) {
+          attendanceSnaps.push(await tx.get(memberRef.collection('attendance').doc(key)));
+          calendarSnaps.push(await tx.get(db.collection('clubCalendar').doc(key)));
+          approvedLeaveSnaps.push(await tx.get(
+            memberRef.collection('absenceRequests').where('dateKey', '==', key)
+          ));
         }
 
-        tx.set(memberRef, {
-          attendanceDaysRemaining: remaining,
-          graceAbsenceDaysRemaining: grace,
+        let lastProcessed = last;
+        let closedCompensationDays = 0;
+        let approvedLeaveDays = 0;
+        let ordinaryGraceDays = 0;
+        let ordinaryMembershipDays = 0;
+        let processed = 0;
+
+        for (let i = 0; i < dates.length; i++) {
+          const key = dates[i];
+          if (key < startKey) { lastProcessed = key; processed++; continue; }
+          if (key > endKey) break;
+          const calendar = calendarSnaps[i].exists ? calendarSnaps[i].data() : {};
+          const attended = attendanceSnaps[i].exists;
+          const approvedLeave = approvedLeaveSnaps[i].docs.some(doc => doc.data().status === 'approved');
+          const approvedLeaveAlreadyApplied = approvedLeaveSnaps[i].docs.some(doc => doc.data().status === 'approved' && doc.data().balanceApplied === true);
+          const isFriday = weekdayForKey(key) === 5;
+
+          // Fridays are the club's normal weekly closure; no compensation is added.
+          if (isFriday) {
+            lastProcessed = key; processed++; continue;
+          }
+
+          // A recorded club-wide closure extends the membership end date by one calendar day.
+          if (isClubClosed(calendar)) {
+            endKey = addDays(endKey, 1);
+            closedCompensationDays++;
+            lastProcessed = key; processed++; continue;
+          }
+
+          if (isExcluded(member, key) || isApprovedPause(member, key)) {
+            lastProcessed = key; processed++; continue;
+          }
+
+          if (attended) {
+            // Reception has already deducted one attendance day at check-in.
+            lastProcessed = key; processed++; continue;
+          }
+
+          if (approvedLeave) {
+            // Approved absence uses grace allowance only, never the 30-day attendance balance.
+            if (!approvedLeaveAlreadyApplied && graceRemaining > 0) graceRemaining--;
+            approvedLeaveDays++;
+          } else if (graceRemaining > 0) {
+            graceRemaining--;
+            ordinaryGraceDays++;
+          } else {
+            attendanceRemaining = Math.max(0, attendanceRemaining - 1);
+            ordinaryMembershipDays++;
+          }
+
+          lastProcessed = key; processed++;
+        }
+
+        if (!processed) return null;
+        const update = {
+          attendanceDaysRemaining: attendanceRemaining,
+          graceAbsenceDaysRemaining: graceRemaining,
+          absenceAllowanceDays: 7,
+          absenceAllowanceDaysRemaining: graceRemaining,
           attendanceLastProcessedDate: lastProcessed,
-          attendanceAbsenceProcessedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        processedMembers++;
-        processedDates += changedDates;
+          attendanceAbsenceProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
+          attendancePlanVersion: 2
+        };
+        if (closedCompensationDays > 0) update.endDate = timestampAtKsaEndOfDay(endKey);
+        tx.set(memberRef, update, { merge: true });
+        return { datesProcessed: processed, attendanceDaysRemaining: attendanceRemaining,
+          graceAbsenceDaysRemaining: graceRemaining, approvedLeaveDays, ordinaryGraceDays,
+          ordinaryMembershipDays, closedCompensationDays, endDateKey: endKey };
       });
-    } catch (err) {
-      errors++;
-      logger.error('Failed to process member absence dates', { memberId: memberDoc.id, error: String(err) });
+
+      if (result) {
+        processedMembers++; processedDates += result.datesProcessed;
+        console.log('Member processed:', memberDoc.id, result);
+      } else skippedMembers++;
+    } catch (error) {
+      errors++; console.error('Failed to process member:', memberDoc.id, error);
     }
   }
 
-  logger.info('Daily absence run completed', { yesterdayKey, processedMembers, processedDates, skippedMembers, errors });
+  console.log('Daily absence run completed', { yesterdayKey, processedMembers, processedDates, skippedMembers, errors });
+  if (errors > 0) throw new Error(`Processing finished with ${errors} member error(s).`);
 }
 
-processDailyAbsences().then(() => {
-  console.log("Daily absence processing finished.");
-  process.exit(0);
-}).catch(error => {
-  console.error("Daily absence processing failed:", error);
-  process.exit(1);
-});
+// ======================================
+// RUN
+// ======================================
+
+processDailyAbsences()
+  .then(() => {
+    console.log('Daily absence processing finished.');
+    process.exit(0);
+  })
+  .catch(error => {
+    console.error('Daily absence processing failed:', error);
+    process.exit(1);
+  });

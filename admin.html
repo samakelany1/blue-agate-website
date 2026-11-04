@@ -71,6 +71,19 @@
         <div id="admin-renewal-requests-list" class="admin-requests-list"><div class="empty-state">جاري تحميل طلبات التجديد...</div></div>
       </section>
 
+      <section class="admin-card maintenance-card">
+        <div class="section-head"><div><p class="eyebrow">CLUB CLOSURES & COMPENSATION</p><h2>إدارة الصيانة والإغلاقات</h2><p>أضيفي أيام الإغلاق؛ يمدد النظام نهاية الاشتراك يومًا عن كل يوم إغلاق مؤهل، دون تغيير رصيد الحضور أو السماح.</p></div></div>
+        <div id="closure-message" class="admin-message" hidden></div>
+        <form id="closure-form" class="member-form two-column-form">
+          <div><label for="closure-start">من تاريخ</label><input id="closure-start" type="date" required></div>
+          <div><label for="closure-end">إلى تاريخ</label><input id="closure-end" type="date" required></div>
+          <div><label for="closure-type">السبب</label><select id="closure-type"><option value="maintenance">صيانة النادي</option><option value="holiday">إجازة رسمية</option><option value="emergency">إغلاق اضطراري</option><option value="other">سبب آخر</option></select></div>
+          <div><label for="closure-note">ملاحظات</label><input id="closure-note" type="text" maxlength="180" placeholder="اختياري"></div>
+          <div class="full-width"><button class="primary-btn" type="submit">حفظ أيام الإغلاق والتعويض</button></div>
+        </form>
+        <div id="closures-list" class="mini-attendance-list"></div>
+      </section>
+
       <div class="stats-grid">
         <div class="stat-card">
           <span>👥</span>
@@ -158,7 +171,7 @@
           <div>
             <p class="eyebrow">NEW MEMBER</p>
             <h2>إضافة مشتركة جديدة</h2>
-            <p>سيتم إنشاء حساب دخول لها تلقائيًا.</p>
+            <p>سيتم إنشاء حساب دخول لها، ثم يمكنكِ تفعيل اشتراكها من ملفها بعد الإنشاء.</p>
           </div>
           <button id="close-add-member" class="secondary-btn dark-btn" type="button">إغلاق</button>
         </div>
@@ -187,14 +200,6 @@
               <option value="3 شهور">3 شهور</option>
               <option value="4 شهور">4 شهور</option>
             </select>
-          </div>
-          <div>
-            <label for="new-start">بداية الاشتراك</label>
-            <input id="new-start" type="date">
-          </div>
-          <div>
-            <label for="new-end">نهاية الاشتراك</label>
-            <input id="new-end" type="date">
           </div>
           <div class="full-width">
             <label for="new-password">كلمة مرور مؤقتة</label>
@@ -231,7 +236,7 @@
           <input id="edit-phone" type="tel" placeholder="05xxxxxxxx">
 
           <label for="edit-membership">نوع الاشتراك</label>
-          <select id="edit-membership">
+          <select id="edit-membership" disabled>
             <option value="">اختاري مدة الاشتراك</option>
               <option value="شهر">شهر</option>
               <option value="شهرين">شهرين</option>
@@ -239,25 +244,30 @@
               <option value="4 شهور">4 شهور</option>
           </select>
 
-          <label for="edit-start">بداية الاشتراك</label>
-          <input id="edit-start" type="date">
+          <label for="edit-start">بداية الاشتراك (تُحدّث من زر التفعيل أو التجديد)</label>
+          <input id="edit-start" type="date" readonly>
 
-          <label for="edit-end">نهاية الاشتراك</label>
-          <input id="edit-end" type="date">
+          <label for="edit-end">نهاية الاشتراك (تُحسب تلقائيًا)</label>
+          <input id="edit-end" type="date" readonly>
 
           <button class="primary-btn" type="submit">حفظ بيانات العضوة</button>
         </form>
 
-        <div class="renewal-box">
-          <div>
-            <strong>🔄 تجديد الاشتراك</strong>
-            <span>التجديد يبدأ من اليوم التالي لنهاية الاشتراك الحالي.</span>
+        <div class="renewal-box subscription-actions-box">
+          <div><strong>▶️ تفعيل الاشتراك</strong><span>يُستخدم لبدء دورة اشتراك جديدة لأي مشتركة، جديدة أو سابقة. التاريخ الذي تختارينه هو تاريخ بدء احتساب الـ30 والـ7 أيام.</span></div>
+          <div class="member-form two-column-form">
+            <div><label for="activation-start-date">تاريخ التفعيل</label><input id="activation-start-date" type="date"></div>
+            <div><label for="activation-duration">مدة الاشتراك</label><select id="activation-duration"><option value="شهر">شهر</option><option value="شهرين">شهرين</option><option value="3 شهور">3 شهور</option><option value="4 شهور">4 شهور</option></select></div>
+            <div class="full-width"><button id="activate-subscription-btn" class="renew-btn" type="button">تفعيل وبدء دورة الاشتراك</button></div>
           </div>
-          <div class="renewal-actions">
-            <button id="renew-one-month" class="renew-btn" type="button">تجديد شهر</button>
-            <button id="renew-two-months" class="renew-btn" type="button">تجديد شهرين</button>
-            <button id="renew-three-months" class="renew-btn" type="button">تجديد 3 شهور</button>
-            <button id="renew-four-months" class="renew-btn" type="button">تجديد 4 شهور</button>
+        </div>
+
+        <div class="renewal-box subscription-actions-box">
+          <div><strong>🔄 تجديد الاشتراك</strong><span>حددي تاريخ بداية التجديد بنفسك؛ لا يشترط أن يكون اليوم التالي لنهاية الاشتراك السابق.</span></div>
+          <div class="member-form two-column-form">
+            <div><label for="renewal-start-date">تاريخ بداية التجديد</label><input id="renewal-start-date" type="date"></div>
+            <div><label for="renewal-duration">مدة التجديد</label><select id="renewal-duration"><option value="شهر">شهر</option><option value="شهرين">شهرين</option><option value="3 شهور">3 شهور</option><option value="4 شهور">4 شهور</option></select></div>
+            <div class="full-width"><button id="renew-subscription-btn" class="renew-btn" type="button">تأكيد تجديد الاشتراك</button></div>
           </div>
         </div>
 
@@ -276,8 +286,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261104-1"></script>
-  <script src="requests-admin.js"></script>
+  <script src="admin.js?v=20261104-3"></script>
+  <script src="requests-admin.js?v=20261104-3"></script>
   <script src="renewal-requests-admin.js"></script>
 </body>
 </html>

@@ -49,9 +49,9 @@ function dayPage(day) {
     <p class="hero-text">اضغطي على أي كلاس لمعرفة نبذة عنه.</p>
 
     <div class="day-detail">
-      ${classCard("☀️", "كلاس الصباح", data.morning)}
-      ${classCard("🕐", "الكلاس الأول", data.first)}
-      ${classCard("🕐", "الكلاس الثاني", data.second)}
+      ${classCard("☀️", "كلاس الصباح • 8:15 ص", data.morning)}
+      ${classCard("🕐", "الكلاس الأول • 3:30 م", data.first)}
+      ${classCard("🕐", "الكلاس الثاني • 6:30 م", data.second)}
     </div>
 
     <div class="schedule-note">

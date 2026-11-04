@@ -12,6 +12,21 @@ if (offersButton) {
 
       <div class="price-section">
         <div class="price-section-head">
+          <span class="price-section-icon">💙</span>
+          <div>
+            <span class="price-section-label">BLUE AGATE MEMBERSHIPS</span>
+            <h3>الاشتراكات الشهرية</h3>
+          </div>
+        </div>
+        <div class="price-grid">
+          <div class="price-card"><h4>اشتراك شهري فردي</h4><div class="price">399 <small>ريال</small></div><p>اشتراك لمدة شهر لشخص واحد.</p></div>
+          <div class="price-card"><h4>اشتراك شهري لشخصين</h4><div class="price">699 <small>ريال</small></div><p>الإجمالي لشخصين — 349.5 ريال لكل مشتركة.</p></div>
+          <div class="price-card"><h4>اشتراك شهري لثلاثة أشخاص</h4><div class="price">999 <small>ريال</small></div><p>الإجمالي لثلاث مشتركات — 333 ريال لكل مشتركة.</p></div>
+        </div>
+      </div>
+
+      <div class="price-section">
+        <div class="price-section-head">
           <span class="price-section-icon">🏋🏻‍♀️</span>
           <div>
             <span class="price-section-label">BLUE AGATE FITNESS</span>
@@ -20,13 +35,6 @@ if (offersButton) {
         </div>
 
         <div class="price-grid">
-          <div class="price-card national-offer">
-            <span class="offer-tag">عرض اليوم الوطني 🇸🇦</span>
-            <h4>شهر + أسبوع مجاني</h4>
-            <div class="price">296 <small>ريال</small></div>
-            <p>اشتركي شهر واحصلي على أسبوع إضافي مجانًا.</p>
-          </div>
-
           <div class="price-card">
             <h4>3 شهور + شهر مجاني</h4>
             <div class="price">996 <small>ريال</small></div>

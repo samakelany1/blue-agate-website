@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Blue Agate Fitness for Women - بوابة المشتركات">
-  <title>Blue Agate | بوابة المشتركات</title>
+  <meta name="description" content="نادي العقيق الأزرق للسيدات - المواعيد والاشتراكات والخدمات وبوابة العضوات">
+  <title>نادي العقيق الأزرق | Blue Agate Fitness</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="offers.css">
   <link rel="stylesheet" href="hours.css">
@@ -32,9 +32,9 @@
 
   <main>
     <section id="guest-hero" class="hero">
-      <p class="eyebrow">BLUE AGATE • MEMBERS PORTAL</p>
-      <h1>أهلاً بكِ في<br><span>Blue Agate</span></h1>
-      <p class="hero-text">كل ما تحتاجينه لناديكِ في مكان واحد.</p>
+      <p class="eyebrow">BLUE AGATE • FITNESS FOR WOMEN</p>
+      <h1>مرحبًا بكِ في<br><span>نادي العقيق الأزرق</span></h1>
+      <p class="hero-text">خطوتك نحو صحة أفضل وقوة أكبر.</p>
       <div class="hero-line"></div>
     </section>
 
@@ -53,6 +53,9 @@
           </form>
           <button id="forgot-password" class="auth-link-button" type="button">نسيتِ كلمة المرور؟</button>
           <div class="auth-switch">ليس لديكِ حساب؟ <button id="show-register" type="button">إنشاء حساب</button></div>
+          <div class="auth-divider"><span>أو</span></div>
+          <button id="browse-as-guest" class="guest-entry-btn" type="button">تصفحي الموقع كزائرة <span aria-hidden="true">←</span></button>
+          <p class="guest-entry-note">للاطلاع على المواعيد والأسعار والخدمات دون تسجيل دخول</p>
         </div>
 
         <div id="register-view" hidden>
@@ -76,6 +79,7 @@
     </section>
 
     <section id="member-portal" class="member-portal app-shell" hidden>
+      <div id="guest-mode-bar" class="guest-mode-bar" hidden><span>أنتِ الآن تتصفحين الموقع كزائرة</span><button id="guest-exit-btn" type="button">العودة لتسجيل الدخول</button></div>
       <div class="member-card member-welcome-card">
         <div>
           <p class="small-label">BLUE AGATE FITNESS</p>

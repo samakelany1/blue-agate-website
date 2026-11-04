@@ -1,5 +1,6 @@
 // Blue Agate - Firebase Authentication
 let blueAgateUser = null;
+let isGuestBrowsing = false;
 
 function showAuthMessage(message, type = "info") {
   const boxes = [
@@ -114,20 +115,48 @@ function updateAuthUI(user) {
   const authSection = document.getElementById("auth-section");
   const portalSection = document.getElementById("member-portal");
   const guestHero = document.getElementById("guest-hero");
+  const guestBar = document.getElementById("guest-mode-bar");
   if (!authSection || !portalSection) return;
+
   if (user) {
+    isGuestBrowsing = false;
+    document.body.classList.remove("guest-mode");
     authSection.hidden = true;
     portalSection.hidden = false;
     if (guestHero) guestHero.hidden = true;
+    if (guestBar) guestBar.hidden = true;
     const emailEl = document.getElementById("member-email");
     if (emailEl) emailEl.textContent = user.email || "";
     const nameEl = document.getElementById("member-name");
     if (nameEl) nameEl.textContent = "أهلًا بكِ في Blue Agate 💙";
+  } else if (isGuestBrowsing) {
+    document.body.classList.add("guest-mode");
+    authSection.hidden = true;
+    portalSection.hidden = false;
+    if (guestHero) guestHero.hidden = true;
+    if (guestBar) guestBar.hidden = false;
+    if (typeof portalHome === "function") portalHome();
   } else {
+    document.body.classList.remove("guest-mode");
     authSection.hidden = false;
     portalSection.hidden = true;
     if (guestHero) guestHero.hidden = false;
+    if (guestBar) guestBar.hidden = true;
   }
+}
+
+function enterGuestMode() {
+  if (firebase.auth().currentUser) return;
+  isGuestBrowsing = true;
+  updateAuthUI(null);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function leaveGuestMode() {
+  isGuestBrowsing = false;
+  updateAuthUI(firebase.auth().currentUser);
+  setAuthView("login");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function initFirebaseAuth() {
@@ -146,6 +175,8 @@ function initFirebaseAuth() {
   document.getElementById("show-login")?.addEventListener("click", () => setAuthView("login"));
   document.getElementById("forgot-password")?.addEventListener("click", resetMemberPassword);
   document.getElementById("logout-btn")?.addEventListener("click", logoutMember);
+  document.getElementById("browse-as-guest")?.addEventListener("click", enterGuestMode);
+  document.getElementById("guest-exit-btn")?.addEventListener("click", leaveGuestMode);
 }
 
 document.addEventListener("DOMContentLoaded", initFirebaseAuth);

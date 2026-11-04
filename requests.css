@@ -1,0 +1,60 @@
+/* Blue Agate member/admin request UI */
+.member-requests-section { display: grid; gap: 20px; }
+.requests-heading, .request-card, .request-history-card, .admin-requests-card {
+  background: #fff; border: 1px solid #e5edf2; border-radius: 20px; padding: 22px;
+}
+.requests-kicker { color: #6b8fa4; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; }
+.requests-heading h2 { margin: 5px 0 8px; color: #10283d; }
+.requests-heading > p:last-child, .request-card > p, .request-history-head p {
+  color: #6b7782; line-height: 1.8; margin-top: 5px;
+}
+.requests-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.request-card { display: flex; flex-direction: column; gap: 10px; }
+.request-card h3, .request-history-head h3 { color: #10283d; margin: 0; }
+.request-card label, .request-note-label { color: #30495b; font-weight: 700; font-size: 13px; }
+.request-card input, .request-card textarea, .request-review-input {
+  width: 100%; box-sizing: border-box; border: 1px solid #d9e2e8; border-radius: 10px;
+  padding: 11px 12px; background: #fbfcfd; color: #183247; font: inherit;
+}
+.request-card textarea { resize: vertical; }
+.request-help { color: #7a8790; font-size: 12px; }
+.request-submit, .request-refresh, .approve-request-btn, .reject-request-btn {
+  border: 0; border-radius: 10px; padding: 11px 16px; cursor: pointer; font: inherit; font-weight: 700;
+}
+.request-submit, .approve-request-btn { background: #173d55; color: #fff; }
+.request-refresh { background: #eaf1f5; color: #173d55; }
+.reject-request-btn { background: #fbe9e9; color: #9a3030; }
+.request-submit:disabled, .approve-request-btn:disabled, .reject-request-btn:disabled { opacity: .55; cursor: wait; }
+.request-message { border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.request-message.success { background: #eaf7ef; color: #22643a; }
+.request-message.error { background: #fff0f0; color: #9a3030; }
+.request-message.info { background: #edf4f8; color: #23485e; }
+.request-history-card { display: grid; gap: 15px; }
+.request-history-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.member-requests-list, .admin-requests-list { display: grid; gap: 12px; }
+.member-request-item, .admin-request-item {
+  border: 1px solid #e5edf2; border-radius: 14px; padding: 15px; background: #fff;
+}
+.member-request-top, .admin-request-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.request-date { color: #6b7782; font-size: 13px; margin: 8px 0; }
+.request-status { display: inline-flex; border-radius: 30px; padding: 5px 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.status-pending { background: #fff4db; color: #855c12; }
+.status-approved { background: #e7f5eb; color: #28613a; }
+.status-rejected { background: #fdeaea; color: #9a3030; }
+.request-review-note { color: #596b78; font-size: 13px; background: #f5f8fa; border-radius: 9px; padding: 9px; }
+.request-attachment { color: #496477; font-size: 12px; }
+.request-empty { text-align: center; padding: 22px; color: #78858e; border: 1px dashed #d9e2e8; border-radius: 12px; }
+.request-empty.error { color: #9a3030; }
+.admin-request-member { display: block; color: #78858e; font-size: 11px; margin-top: 4px; direction: ltr; text-align: right; }
+.admin-request-reason { line-height: 1.7; }
+.admin-request-actions { display: flex; gap: 8px; margin: 12px 0; }
+.request-file-link { display: inline-block; border: 0; padding: 0; background: transparent; color: #17658a; text-decoration: underline; cursor: pointer; font: inherit; margin: 5px 0; }
+.request-filter-row { display: flex; gap: 8px; margin: 12px 0; }
+.admin-request-filter { border: 1px solid #d9e2e8; border-radius: 30px; padding: 8px 14px; background: #fff; color: #355367; cursor: pointer; }
+.admin-request-filter.active { background: #173d55; border-color: #173d55; color: #fff; }
+.request-note-label { display: block; margin: 8px 0 5px; }
+@media (max-width: 720px) {
+  .requests-grid { grid-template-columns: 1fr; }
+  .requests-heading, .request-card, .request-history-card, .admin-requests-card { padding: 16px; }
+  .member-request-top, .admin-request-top { align-items: flex-start; }
+}

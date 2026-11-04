@@ -6,6 +6,7 @@
   <meta name="description" content="Blue Agate - لوحة تحكم النادي">
   <title>Blue Agate | لوحة التحكم</title>
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="requests.css">
 </head>
 <body>
   <header class="admin-topbar">
@@ -43,6 +44,25 @@
           <p>من هنا تديرين بيانات المشتركات والاشتراكات.</p>
         </div>
       </div>
+
+      <section class="admin-card admin-requests-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">MEMBER REQUESTS</p>
+            <h2>طلبات الغياب والأعذار الطبية</h2>
+            <p>راجعي الطلبات والمرفقات، ثم اعتمدي الطلب أو ارفضيـه.</p>
+          </div>
+          <button id="refresh-admin-requests" class="secondary-btn dark-btn" type="button">تحديث الطلبات</button>
+        </div>
+        <div class="request-filter-row">
+          <button class="admin-request-filter active" data-request-filter="pending" type="button">قيد المراجعة</button>
+          <button class="admin-request-filter" data-request-filter="all" type="button">كل الطلبات</button>
+        </div>
+        <div id="admin-requests-message" class="admin-message" hidden></div>
+        <div id="admin-requests-list" class="admin-requests-list">
+          <div class="empty-state">جاري تحميل الطلبات...</div>
+        </div>
+      </section>
 
       <div class="stats-grid">
         <div class="stat-card">
@@ -248,7 +268,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="admin.js?v=20261104-1"></script>
+  <script src="requests-admin.js"></script>
 </body>
 </html>

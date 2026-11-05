@@ -60,37 +60,67 @@ async function registerMember(event) {
   const email = document.getElementById("register-email").value.trim();
   const password = document.getElementById("register-password").value;
   const confirmPassword = document.getElementById("register-password-confirm").value;
+  const rawCode = (document.getElementById("register-link-code")?.value || "").trim().replace(/\s+/g, "").toUpperCase();
+  if (!name || !email || !password || !confirmPassword) { showAuthMessage("أكملي جميع البيانات.", "error"); return; }
+  if (password.length < 6) { showAuthMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل.", "error"); return; }
+  if (password !== confirmPassword) { showAuthMessage("كلمتا المرور غير متطابقتين.", "error"); return; }
 
-  if (!name || !email || !password || !confirmPassword) {
-    showAuthMessage("أكملي جميع البيانات.", "error");
-    return;
-  }
-  if (password.length < 6) {
-    showAuthMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل.", "error");
-    return;
-  }
-  if (password !== confirmPassword) {
-    showAuthMessage("كلمتا المرور غير متطابقتين.", "error");
-    return;
-  }
-
+  let linkCodeHash = null;
+  let linkCodeData = null;
   try {
+    if (rawCode) {
+      if (!/^[A-F0-9]{32}$/.test(rawCode)) throw new Error("رمز الربط غير صحيح. راجعي الرمز مع الاستقبال.");
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawCode));
+      linkCodeHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+      const codeSnap = await firebase.firestore().collection("memberLinkCodes").doc(linkCodeHash).get();
+      if (!codeSnap.exists || codeSnap.data().status !== "active") throw new Error("رمز الربط غير صالح أو سبق استخدامه.");
+      linkCodeData = codeSnap.data();
+    }
+
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    await firebase.firestore().collection("members").doc(result.user.uid).set({
-      name,
-      email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    showAuthMessage("تم إنشاء حسابك بنجاح.", "success");
+    const db = firebase.firestore();
+    const user = result.user;
+    if (linkCodeData) {
+      const source = linkCodeData.memberData || {};
+      const memberData = {
+        ...source,
+        uid: user.uid,
+        name,
+        email,
+        phone: source.phone || "",
+        sourceMemberId: linkCodeData.sourceMemberId,
+        notionMemberPageId: linkCodeData.sourcePageId,
+        importedWithoutLogin: false,
+        loginEnabled: true,
+        linkedFromNotion: true,
+        importedSubscriptionHistory: linkCodeData.subscriptionHistory || [],
+        linkedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        linkCodeHash
+      };
+      const batch = db.batch();
+      batch.set(db.collection("members").doc(user.uid), memberData);
+      batch.update(db.collection("memberLinkCodes").doc(linkCodeHash), {
+        status: "used", usedBy: user.uid, usedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      batch.update(db.collection("members").doc(linkCodeData.sourceMemberId), {
+        linkedToUid: user.uid, loginEnabled: true, linkedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await batch.commit();
+      showAuthMessage("تم إنشاء حسابك وربط سجل اشتراكاتك السابق بنجاح. أهلًا بكِ في Blue Agate!", "success");
+    } else {
+      await db.collection("members").doc(user.uid).set({ name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      showAuthMessage("تم إنشاء حسابك بنجاح.", "success");
+    }
   } catch (error) {
-    let message = "تعذر إنشاء الحساب.";
+    console.error(error);
+    let message = error.message || "تعذر إنشاء الحساب.";
     if (error.code === "auth/email-already-in-use") message = "هذا البريد مستخدم مسبقًا.";
     else if (error.code === "auth/invalid-email") message = "البريد الإلكتروني غير صحيح.";
     else if (error.code === "auth/weak-password") message = "كلمة المرور ضعيفة. اختاري كلمة أقوى.";
+    else if (error.code === "permission-denied") message = "تعذر ربط السجل بسبب صلاحيات قاعدة البيانات. تواصلي مع الإدارة قبل إعادة المحاولة.";
     showAuthMessage(message, "error");
   }
 }
-
 async function resetMemberPassword() {
   hideAuthMessage();
   const emailInput = document.getElementById("login-email");

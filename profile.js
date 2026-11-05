@@ -83,6 +83,17 @@ async function loadMemberProfile() {
     if (statusTitle) statusTitle.textContent = status.title;
     if (statusText) statusText.textContent = status.text;
 
+    const historyCard = document.getElementById("imported-subscription-history-card");
+    const historyBox = document.getElementById("imported-subscription-history");
+    const history = Array.isArray(data.importedSubscriptionHistory) ? data.importedSubscriptionHistory : [];
+    if (historyCard && historyBox && history.length) {
+      historyCard.hidden = false;
+      historyBox.innerHTML = history.map((item, index) => {
+        const safe = value => String(value ?? "—").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+        return `<div class="profile-info" style="margin:8px 0;padding:10px;border:1px solid #e5edf1;border-radius:10px"><strong>${index + 1}. ${safe(item.subscriptionType || "اشتراك")}</strong><div>تاريخ التفعيل: ${safe(item.activationDate || "غير متوفر")}</div><div>تاريخ الانتهاء: ${safe(item.endDate || "غير متوفر")}</div><div>الحالة المسجلة: ${safe(item.statusSource || "غير محددة")}</div></div>`;
+      }).join("");
+    } else if (historyCard) { historyCard.hidden = true; }
+
     const nameInput = document.getElementById("profile-name-input");
     const phoneInput = document.getElementById("profile-phone-input");
     if (nameInput) nameInput.value = name;

@@ -271,6 +271,13 @@
           </div>
         </div>
 
+        <div class="renewal-box subscription-actions-box" id="member-link-box">
+          <div><strong>🔗 ربط حساب المشتركة</strong><span>إصدار رمز تستخدمه المشتركة عند إنشاء حسابها لاستعادة سجلها المستورد من نوشن.</span></div>
+          <div id="member-link-status" class="admin-message" hidden></div>
+          <button id="issue-member-link-code" class="renew-btn" type="button">إصدار رمز ربط لمرة واحدة</button>
+          <div id="member-link-code-result" class="admin-message" hidden></div>
+        </div>
+
         <div class="attendance-box">
           <div>
             <strong>📅 سجل الحضور</strong>
@@ -286,8 +293,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261104-3"></script>
-  <script src="requests-admin.js?v=20261104-3"></script>
+  <script src="admin.js?v=20261105-link1"></script>
+  <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
 </body>
 </html>

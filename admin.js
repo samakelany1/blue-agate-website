@@ -134,7 +134,7 @@ async function loadMembers() {
   try {
     const snapshot = await firebase.firestore().collection("members").orderBy("name").get();
     allMembers = [];
-    snapshot.forEach(doc => allMembers.push({ uid: doc.id, ...doc.data() }));
+    snapshot.forEach(doc => { const data = doc.data(); if (!data.linkedToUid) allMembers.push({ uid: doc.id, ...data }); });
     updateStats();
     renderMembers();
   } catch (error) {
@@ -560,12 +560,58 @@ async function loginAdmin(event) {
   }
 }
 
+// One-time member linking codes for imported Notion memberships.
+function randomLinkCode() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+}
+async function issueMemberLinkCode() {
+  const resultBox = document.getElementById("member-link-code-result");
+  const button = document.getElementById("issue-member-link-code");
+  if (!currentEditingUid) return;
+  const member = allMembers.find(m => m.uid === currentEditingUid);
+  if (!member || !member.importedWithoutLogin || !member.notionMemberPageId) {
+    resultBox.textContent = "هذا السجل ليس عضوية مستوردة قابلة للربط.";
+    resultBox.className = "admin-message error"; resultBox.hidden = false; return;
+  }
+  button.disabled = true;
+  try {
+    const db = firebase.firestore();
+    const recordsSnap = await db.collection("subscriptionRecords").where("sourcePageId", "==", member.notionMemberPageId).get();
+    const history = recordsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const code = randomLinkCode();
+    const codeHash = await sha256Hex(code);
+    await db.collection("memberLinkCodes").doc(codeHash).set({
+      sourceMemberId: currentEditingUid,
+      sourcePageId: member.notionMemberPageId,
+      memberData: member,
+      subscriptionHistory: history,
+      status: "active",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: firebase.auth().currentUser.uid
+    });
+    resultBox.textContent = `رمز الربط (يُستخدم مرة واحدة): ${code} — انسخيه وأرسليه للمشتركة الآن. لن يظهر مرة أخرى بعد إغلاق هذه الصفحة.`;
+    resultBox.className = "admin-message success"; resultBox.hidden = false;
+  } catch (error) {
+    console.error(error);
+    resultBox.textContent = "تعذر إصدار رمز الربط. تحققي من قواعد Firestore.";
+    resultBox.className = "admin-message error"; resultBox.hidden = false;
+  } finally { button.disabled = false; }
+}
+
 async function initAdmin() {
   firebase.initializeApp(firebaseConfig);
   document.getElementById("admin-login-form").addEventListener("submit", loginAdmin);
   document.getElementById("member-search").addEventListener("input", renderMembers);
   document.getElementById("refresh-members").addEventListener("click", loadMembers);
   document.getElementById("member-form").addEventListener("submit", saveMember);
+  document.getElementById("issue-member-link-code").addEventListener("click", issueMemberLinkCode);
   document.getElementById("open-add-member").addEventListener("click", openAddMember);
   document.getElementById("open-add-trainer").addEventListener("click", openAddTrainer);
   document.getElementById("close-add-trainer").addEventListener("click", () => { document.getElementById("add-trainer").hidden = true; });

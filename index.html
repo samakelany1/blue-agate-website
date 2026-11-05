@@ -71,6 +71,9 @@
             <input id="register-password" type="password" autocomplete="new-password" minlength="6" required>
             <label for="register-password-confirm">تأكيد كلمة المرور</label>
             <input id="register-password-confirm" type="password" autocomplete="new-password" minlength="6" required>
+            <label for="register-link-code">رمز ربط سجل العضوية (للمشتركات المستوردات)</label>
+            <input id="register-link-code" type="text" autocomplete="one-time-code" placeholder="أدخلي الرمز الذي استلمتِه من النادي" dir="ltr">
+            <small class="field-help">إذا كان لديكِ سجل سابق في النادي، أدخلي رمز الربط الصادر من الإدارة حتى يظهر سجل اشتراكاتك السابق.</small>
             <button class="auth-primary" type="submit">إنشاء الحساب</button>
           </form>
           <div class="auth-switch">لديكِ حساب بالفعل؟ <button id="show-login" type="button">تسجيل الدخول</button></div>
@@ -263,6 +266,10 @@
           </div>
         </div>
 
+        <section class="profile-card" id="imported-subscription-history-card" hidden>
+          <h3 class="profile-edit-title">سجل اشتراكاتك السابقة</h3>
+          <div id="imported-subscription-history" class="small"></div>
+        </section>
         <h3 class="profile-edit-title">بياناتك</h3>
         <div id="profile-message" class="profile-message" hidden></div>
 
@@ -297,10 +304,10 @@
   <script src="script.js"></script>
   <script src="offers.js"></script>
   <script src="hours.js"></script>
-  <script src="auth.js"></script>
+  <script src="auth.js?v=20261105-link1"></script>
   <script src="attendance.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="profile.js"></script>
+  <script src="profile.js?v=20261105-link1"></script>
   <script src="subscription-countdown.js"></script>
   <script src="app-layout.js"></script>
   <script src="requests-member.js"></script>

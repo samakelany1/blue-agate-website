@@ -169,7 +169,7 @@ function renderMembers() {
     const stateText = state === "active" ? "نشط" : state === "expired" ? "منتهي" : "غير مكتمل";
     const stateClass = state === "active" ? "active" : state === "expired" ? "expired" : "unknown";
     return `<button class="member-row" type="button" data-uid="${escapeHtml(member.uid)}">
-      <div class="member-main"><strong>${escapeHtml(member.name || "بدون اسم")}</strong><span>${escapeHtml(member.email || member.phone || "بدون بيانات تواصل")}</span></div>
+      <div class="member-main"><strong>${escapeHtml(member.name || "بدون اسم")}</strong><span>${escapeHtml(member.importedWithoutLogin ? "لا يوجد حساب دخول — مستوردة من نوشن" : (member.email || member.phone || "بدون بيانات تواصل"))}</span></div>
       <div class="member-meta"><span class="status-pill ${stateClass}">${stateText}</span><span>${escapeHtml(member.membershipType || "نوع الاشتراك غير مضاف")}</span></div>
     </button>`;
   }).join("");

@@ -102,71 +102,159 @@ async function handleScan(raw){
     $('manual-uid').value='';
     showMessage('scan-message',result.ok?'تم تسجيل الحضور بنجاح.':result.title,result.ok?'success':'error');
   }catch(e){
-    console.error(e);
-    showMessage('scan-message','تعذر تسجيل الحضور. تحققي من الاتصال وصلاحيات Firebase.','error');
+    console.error('Reception check-in failed:',e);
+    const code=e && e.code ? ` (${e.code})` : '';
+    showMessage('scan-message',`تعذر تسجيل الحضور${code}. راجعي اتصال الإنترنت وصلاحيات Firestore.`, 'error');
   }finally{setTimeout(()=>{busy=false;},1800);}
 }
 async function registerCheckin(uid){
-  const db=firebase.firestore(), today=new Date(), todayKey=dateKey(today);
-  const memberRef=db.collection('members').doc(uid), todayRef=memberRef.collection('attendance').doc(todayKey);
+  const db=firebase.firestore();
+  const today=new Date();
+  const todayKey=dateKey(today);
+  const memberRef=db.collection('members').doc(uid);
+  const attendanceCollection=memberRef.collection('attendance');
+  const todayRef=attendanceCollection.doc(todayKey);
+  const calendarCollection=db.collection('clubCalendar');
+  const leaveCollection=memberRef.collection('absenceRequests');
+
+  // Firestore Web transactions accept document references, not Query objects.
+  // Read the history collections before starting the transaction, then use
+  // the transaction only for the member and today's critical documents.
+  const [attendanceHistory,leaveHistory,calendarHistory]=await Promise.all([
+    attendanceCollection.get(),
+    leaveCollection.get(),
+    calendarCollection.get()
+  ]);
+
+  const attendedDates=new Set();
+  attendanceHistory.forEach(doc=>{
+    const data=doc.data();
+    attendedDates.add(data.dateKey||doc.id);
+  });
+
+  const leavesByDate=new Map();
+  leaveHistory.forEach(doc=>{
+    const data=doc.data();
+    if(!data.dateKey)return;
+    if(!leavesByDate.has(data.dateKey))leavesByDate.set(data.dateKey,[]);
+    leavesByDate.get(data.dateKey).push(data);
+  });
+
+  const calendarByDate=new Map();
+  calendarHistory.forEach(doc=>calendarByDate.set(doc.id,doc.data()));
+
   return db.runTransaction(async tx=>{
-    const mSnap=await tx.get(memberRef);
+    const [mSnap,attToday,todayCalendar]=await Promise.all([
+      tx.get(memberRef),
+      tx.get(todayRef),
+      tx.get(calendarCollection.doc(todayKey))
+    ]);
+
     if(!mSnap.exists)return {ok:false,title:'العضوية غير موجودة',detail:'لم يتم العثور على حساب بهذه البطاقة.'};
     const m=mSnap.data();
     if(!firebase.auth().currentUser)throw new Error('Not signed in');
-    const attToday=await tx.get(todayRef);
-    const [todayCalendar,todayLeaveSnap]=await Promise.all([
-      tx.get(db.collection('clubCalendar').doc(todayKey)),
-      tx.get(memberRef.collection('absenceRequests').where('dateKey','==',todayKey))
-    ]);
-    const memberInfo={name:m.name,membershipType:m.membershipType,startDate:m.startDate,endDate:m.endDate,remaining:Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30,grace:Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7};
+
+    const memberInfo={
+      name:m.name,
+      membershipType:m.membershipType,
+      startDate:m.startDate,
+      endDate:m.endDate,
+      remaining:Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30,
+      grace:Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7
+    };
+
     if(attToday.exists)return {ok:false,title:'تم تسجيل الحضور اليوم',detail:`${m.name||'العضوة'} لديها حضور مسجل لهذا اليوم.`,member:memberInfo};
     if(m.active===false || m.membershipActive===false)return {ok:false,title:'العضوية موقوفة',detail:'راجعي الإدارة قبل السماح بالدخول.',member:memberInfo};
 
-    const start=startOfDay(m.startDate); let end=startOfDay(m.endDate); const todayStart=startOfDay(today);
+    const start=startOfDay(m.startDate);
+    let end=startOfDay(m.endDate);
+    const todayStart=startOfDay(today);
     if(!start || !end)return {ok:false,title:'بيانات الاشتراك غير مكتملة',detail:'لا يوجد تاريخ بداية أو نهاية صالح للاشتراك. راجعي الإدارة.',member:memberInfo};
     if(todayStart<start)return {ok:false,title:'لم يبدأ الاشتراك بعد',detail:`يبدأ الاشتراك بتاريخ ${formatDate(m.startDate)}.`,member:memberInfo};
     if(todayStart>end)return {ok:false,title:'الاشتراك منتهٍ',detail:`انتهى الاشتراك بتاريخ ${formatDate(m.endDate)}. يلزم التجديد قبل الدخول.`,member:memberInfo};
     if(isFriday(today))return {ok:false,title:'النادي مغلق يوم الجمعة',detail:'لا يمكن تسجيل حضور في يوم إغلاق النادي.',member:memberInfo};
-    if(todayCalendar.exists && (todayCalendar.data().closed===true || todayCalendar.data().type==='closed'))return {ok:false,title:'النادي مغلق اليوم',detail:todayCalendar.data().reason||'تم تسجيل إغلاق النادي لهذا اليوم.',member:memberInfo};
-    if(todayLeaveSnap.docs.some(doc=>doc.data().status==='approved'))return {ok:false,title:'لديها إجازة معتمدة اليوم',detail:'تم اعتماد غياب هذه العضوة لهذا اليوم، ولا يمكن تسجيل حضور متزامن.',member:memberInfo};
+
+    const todayCalendarData=todayCalendar.exists?todayCalendar.data():{};
+    if(todayCalendarData.closed===true || todayCalendarData.type==='closed'){
+      return {ok:false,title:'النادي مغلق اليوم',detail:todayCalendarData.reason||'تم تسجيل إغلاق النادي لهذا اليوم.',member:memberInfo};
+    }
+
+    const todayLeaves=leavesByDate.get(todayKey)||[];
+    if(todayLeaves.some(leave=>leave.status==='approved')){
+      return {ok:false,title:'لديها إجازة معتمدة اليوم',detail:'تم اعتماد غياب هذه العضوة لهذا اليوم، ولا يمكن تسجيل حضور متزامن.',member:memberInfo};
+    }
 
     let started=m.attendancePlanStartedAt?toDate(m.attendancePlanStartedAt):null;
     let remaining=Number.isFinite(m.attendanceDaysRemaining)?m.attendanceDaysRemaining:30;
     let grace=Number.isFinite(m.graceAbsenceDaysRemaining)?m.graceAbsenceDaysRemaining:7;
     let last=m.attendanceLastProcessedDate||null;
+
     if(!started){
-      started=new Date(today); started.setHours(0,0,0,0);
-      remaining=30; grace=7; last=todayKey;
+      started=new Date(today);
+      started.setHours(0,0,0,0);
+      remaining=30;
+      grace=7;
+      last=todayKey;
     }else{
       let cursor=last?nextDay(fromKey(last)):nextDay(started);
       let iterations=0;
       while(dateKey(cursor)<todayKey && iterations<370){
         const key=dateKey(cursor);
-        const oldRef=memberRef.collection('attendance').doc(key);
-        const [oldSnap, calendarSnap, leaveSnap]=await Promise.all([
-          tx.get(oldRef),
-          tx.get(db.collection('clubCalendar').doc(key)),
-          tx.get(memberRef.collection('absenceRequests').where('dateKey','==',key))
-        ]);
-        const calendar=calendarSnap.exists?calendarSnap.data():{};
+        const calendar=calendarByDate.get(key)||{};
         const globalClosed=calendar.closed===true||calendar.type==='closed';
-        if(globalClosed){end=nextDay(end);}
-        else if(!isFriday(cursor)&&!isClosedDate(key,m)&&!oldSnap.exists){
-          const approved=leaveSnap.docs.find(d=>d.data().status==='approved');
-          if(approved){if(approved.data().balanceApplied!==true&&grace>0)grace-=1;}
-          else if(grace>0)grace-=1;
-          else remaining=Math.max(0,remaining-1);
+
+        if(globalClosed){
+          end=nextDay(end);
+        }else if(!isFriday(cursor)&&!isClosedDate(key,m)&&!attendedDates.has(key)){
+          const approvedLeave=(leavesByDate.get(key)||[]).find(leave=>leave.status==='approved');
+          if(approvedLeave){
+            if(approvedLeave.balanceApplied!==true&&grace>0)grace-=1;
+          }else if(grace>0){
+            grace-=1;
+          }else{
+            remaining=Math.max(0,remaining-1);
+          }
         }
-        last=key; cursor=nextDay(cursor); iterations++;
+
+        last=key;
+        cursor=nextDay(cursor);
+        iterations++;
       }
       if(iterations>=370)throw new Error('Attendance reconciliation exceeded safe range; admin review required.');
     }
-    if(remaining<=0)return {ok:false,title:'انتهى رصيد أيام الحضور',detail:'لا يمكن تسجيل حضور جديد قبل تجديد الرصيد من الإدارة.',member:{...memberInfo,remaining,grace}};
+
+    if(remaining<=0){
+      return {ok:false,title:'انتهى رصيد أيام الحضور',detail:'لا يمكن تسجيل حضور جديد قبل تجديد الرصيد من الإدارة.',member:{...memberInfo,remaining,grace}};
+    }
+
     remaining=Math.max(0,remaining-1);
-    tx.set(todayRef,{uid,dateKey:todayKey,timestamp:firebase.firestore.FieldValue.serverTimestamp(),source:'reception-qr'});
-    tx.set(memberRef,{attendancePlanStartedAt:firebase.firestore.Timestamp.fromDate(started),attendanceDaysRemaining:remaining,graceAbsenceDaysRemaining:grace,attendanceLastProcessedDate:todayKey,attendancePlanVersion:2,...(end.getTime()!==startOfDay(m.endDate).getTime()?{endDate:firebase.firestore.Timestamp.fromDate(new Date(end.getTime()+86399999))}:{})},{merge:true});
-    return {ok:true,title:`تم تسجيل حضور ${m.name||'العضوة'} ✓`,detail:'تم اعتماد حضور اليوم وتحديث الرصيد.',member:{...memberInfo,remaining,grace}};
+    tx.set(todayRef,{
+      uid,
+      dateKey:todayKey,
+      timestamp:firebase.firestore.FieldValue.serverTimestamp(),
+      source:'reception-qr'
+    });
+
+    const memberUpdates={
+      attendancePlanStartedAt:firebase.firestore.Timestamp.fromDate(started),
+      attendanceDaysRemaining:remaining,
+      graceAbsenceDaysRemaining:grace,
+      attendanceLastProcessedDate:todayKey,
+      attendancePlanVersion:2
+    };
+    if(end.getTime()!==startOfDay(m.endDate).getTime()){
+      const extendedEnd=new Date(end);
+      extendedEnd.setHours(23,59,59,999);
+      memberUpdates.endDate=firebase.firestore.Timestamp.fromDate(extendedEnd);
+    }
+
+    tx.set(memberRef,memberUpdates,{merge:true});
+    return {
+      ok:true,
+      title:`تم تسجيل حضور ${m.name||'العضوة'} ✓`,
+      detail:'تم اعتماد حضور اليوم وتحديث الرصيد.',
+      member:{...memberInfo,remaining,grace,endDate:memberUpdates.endDate||m.endDate}
+    };
   });
 }
 

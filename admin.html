@@ -7,6 +7,7 @@
   <title>Blue Agate | لوحة التحكم</title>
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="requests.css">
+  <link rel="stylesheet" href="tracking.css">
 </head>
 <body>
   <header class="admin-topbar">
@@ -278,6 +279,25 @@
           <div id="member-link-code-result" class="admin-message" hidden></div>
         </div>
 
+        <section class="admin-measurements-box">
+          <div class="section-head"><div><p class="eyebrow">BODY MEASUREMENTS</p><h3>قياسات المشتركة</h3><p>أضيفي قياسًا جديدًا؛ سيظهر في حساب المشتركة مع القياسات السابقة.</p></div></div>
+          <div id="measurement-admin-message" class="admin-message" hidden></div>
+          <form id="measurement-form" class="member-form two-column-form">
+            <div><label for="measurement-date">تاريخ القياس</label><input id="measurement-date" type="date" required></div>
+            <div><label for="measurement-weight">الوزن (كجم)</label><input id="measurement-weight" type="number" min="0" max="500" step="0.1" placeholder="مثال: 62.5"></div>
+            <div><label for="measurement-bodyfat">نسبة الدهون (%)</label><input id="measurement-bodyfat" type="number" min="0" max="100" step="0.1" placeholder="مثال: 28"></div>
+            <div><label for="measurement-chest">الصدر (سم)</label><input id="measurement-chest" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-waist">الخصر (سم)</label><input id="measurement-waist" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-abdomen">البطن (سم)</label><input id="measurement-abdomen" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-hips">الأرداف (سم)</label><input id="measurement-hips" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-arm">الذراع (سم)</label><input id="measurement-arm" type="number" min="0" max="150" step="0.1"></div>
+            <div><label for="measurement-thigh">الفخذ (سم)</label><input id="measurement-thigh" type="number" min="0" max="200" step="0.1"></div>
+            <div class="full-width"><label for="measurement-notes">ملاحظات المدربة</label><textarea id="measurement-notes" rows="3" maxlength="700" placeholder="ملاحظات اختيارية عن القياس أو التقدم"></textarea></div>
+            <div class="full-width"><button id="save-measurement-btn" class="primary-btn" type="submit">حفظ القياسات للمشتركة</button></div>
+          </form>
+          <div class="measurement-admin-list-wrap"><h4>سجل القياسات السابقة</h4><div id="admin-measurements-list" class="measurement-admin-list"><div class="mini-empty">اختاري مشتركة لعرض قياساتها.</div></div></div>
+        </section>
+
         <div class="attendance-box">
           <div>
             <strong>📅 سجل الحضور</strong>
@@ -293,7 +313,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261105-link1"></script>
+  <script src="admin.js?v=20261107-measurements3"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
 </body>

@@ -5,6 +5,8 @@ function portalView(name) {
   const views = {
     home: document.getElementById("view-home"),
     attendance: document.getElementById("view-attendance"),
+    absence: document.getElementById("view-absence"),
+    measurements: document.getElementById("view-measurements"),
     profile: document.getElementById("view-profile"),
     content: document.getElementById("content")
   };
@@ -46,6 +48,8 @@ function initPortalLayout() {
       if (view === "home") portalHome();
       if (view === "classes") portalClasses();
       if (view === "attendance") portalView("attendance");
+      if (view === "absence") portalView("absence");
+      if (view === "measurements") portalView("measurements");
       if (view === "profile") portalView("profile");
     });
   });

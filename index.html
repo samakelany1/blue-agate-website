@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="attendance.css">
   <link rel="stylesheet" href="profile.css">
+  <link rel="stylesheet" href="tracking.css">
   <link rel="stylesheet" href="app-layout.css">
   <link rel="stylesheet" href="requests.css">
 <style>
@@ -97,6 +98,8 @@
         <button class="portal-nav-btn" data-view="classes" type="button"><span>📅</span><strong>الكلاسات</strong></button>
         <button class="portal-nav-btn" data-view="attendance" type="button"><span>✓</span><strong>الحضور</strong></button>
         <button class="portal-nav-btn" data-view="requests" type="button"><span>📝</span><strong>طلباتي</strong></button>
+        <button class="portal-nav-btn" data-view="absence" type="button"><span>📊</span><strong>رصيد الغياب</strong></button>
+        <button class="portal-nav-btn" data-view="measurements" type="button"><span>📏</span><strong>قياساتي</strong></button>
         <button class="portal-nav-btn" data-view="profile" type="button"><span>👤</span><strong>حسابي</strong></button>
       </nav>
 
@@ -215,6 +218,27 @@
         </section>
       </div>
 
+      <div id="view-absence" class="portal-view" hidden>
+        <section class="member-tracking-section">
+          <div class="tracking-heading"><p class="tracking-kicker">BLUE AGATE • ABSENCE BALANCE</p><h2>رصيد أيام الغياب</h2><p>تابعي عدد أيام التعويض التي استهلكتِها والمتبقية من رصيدكِ.</p></div>
+          <div class="tracking-card">
+            <div class="tracking-stats">
+              <div><span>المستهلكة</span><strong id="absence-days-used">—</strong><small>من أصل 7 أيام</small></div>
+              <div><span>المتبقية</span><strong id="absence-days-left">—</strong><small>يوم تعويض</small></div>
+            </div>
+            <div class="tracking-progress"><div id="absence-progress-bar"></div></div>
+            <p id="absence-balance-note" class="tracking-note">يتم تحديث الرصيد وفق أيام الغياب المحتسبة في نظام النادي.</p>
+          </div>
+        </section>
+      </div>
+
+      <div id="view-measurements" class="portal-view" hidden>
+        <section class="member-tracking-section">
+          <div class="tracking-heading"><p class="tracking-kicker">BLUE AGATE • BODY MEASUREMENTS</p><h2>قياساتي</h2><p>هنا تجدين سجل قياساتكِ المسجل من إدارة النادي.</p></div>
+          <div id="member-measurements-list" class="member-measurements-list"><div class="tracking-empty">جاري تحميل القياسات...</div></div>
+        </section>
+      </div>
+
       <div id="view-profile" class="portal-view" hidden>
     <section id="profile-section" class="profile-section" aria-label="ملف العضوة">
       <div class="profile-card">
@@ -307,7 +331,8 @@
   <script src="auth.js?v=20261105-link1"></script>
   <script src="attendance.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="profile.js?v=20261105-link1"></script>
+  <script src="profile.js?v=20261107-tracking2"></script>
+  <script src="member-tracking.js?v=20261107-tracking2"></script>
   <script src="subscription-countdown.js"></script>
   <script src="app-layout.js"></script>
   <script src="requests-member.js"></script>

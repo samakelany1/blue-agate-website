@@ -239,6 +239,9 @@ async function registerCheckin(uid){
       attendancePlanStartedAt:firebase.firestore.Timestamp.fromDate(started),
       attendanceDaysRemaining:remaining,
       graceAbsenceDaysRemaining:grace,
+      graceAbsenceDaysConsumed:Math.max(0,7-grace),
+      absenceAllowanceDays:7,
+      absenceAllowanceDaysRemaining:grace,
       attendanceLastProcessedDate:todayKey,
       attendancePlanVersion:2
     };

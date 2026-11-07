@@ -59,6 +59,8 @@ async function loadMemberProfile() {
     if (!doc.exists) return;
 
     const data = doc.data();
+    if (typeof renderAbsenceBalance === "function") renderAbsenceBalance(data);
+    if (typeof loadMemberMeasurements === "function") await loadMemberMeasurements(user.uid);
     const name = data.name || user.displayName || "عضوة Blue Agate";
     const email = data.email || user.email || "";
     const phone = data.phone || "غير مضاف";

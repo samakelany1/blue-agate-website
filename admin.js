@@ -201,7 +201,8 @@ async function openMemberEditor(uid) {
   document.getElementById("renewal-duration").value = member.membershipType || "شهر";
   editorMessage("", "info");
   document.getElementById("editor-message").hidden = true;
-  await loadMemberAttendance(uid);
+  await Promise.all([loadMemberAttendance(uid), loadAdminMeasurements(uid)]);
+  document.getElementById("measurement-date").value = todayInputDate();
   document.getElementById("member-editor").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -354,6 +355,7 @@ async function applySubscriptionCycle(mode) {
       attendancePlanStartedAt: cycleData.startDate,
       attendanceDaysRemaining: 30,
       graceAbsenceDaysRemaining: 7,
+      graceAbsenceDaysConsumed: 0,
       absenceAllowanceDays: 7,
       absenceAllowanceDaysRemaining: 7,
       attendanceLastProcessedDate: previousDateKey(startString),
@@ -428,6 +430,87 @@ async function loadClubClosures() {
     const closed = snap.docs.filter(doc => doc.data().closed === true).sort((a,b) => b.id.localeCompare(a.id)).slice(0,20);
     list.innerHTML = closed.length ? closed.map(doc => `<span>${escapeHtml(doc.id)} • ${escapeHtml(doc.data().reason || doc.data().closureType || "إغلاق النادي")}</span>`).join("") : '<span>لا توجد أيام إغلاق مسجلة.</span>';
   } catch (error) { console.warn("Could not load closure dates", error); list.innerHTML = ""; }
+}
+
+function measurementAdminMessage(message, type = "info") {
+  const box = document.getElementById("measurement-admin-message");
+  if (!box) return;
+  box.textContent = message;
+  box.className = `admin-message ${type}`;
+  box.hidden = false;
+}
+
+function measurementNumber(id) {
+  const raw = document.getElementById(id).value.trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) throw new Error("تحققي من قيم القياسات المدخلة.");
+  return value;
+}
+
+async function saveMemberMeasurement(event) {
+  event.preventDefault();
+  if (!currentEditingUid) return;
+  const button = document.getElementById("save-measurement-btn");
+  button.disabled = true;
+  try {
+    const dateKey = document.getElementById("measurement-date").value;
+    if (!dateKey) throw new Error("حددي تاريخ القياس.");
+    const record = {
+      dateKey,
+      weight: measurementNumber("measurement-weight"),
+      bodyFat: measurementNumber("measurement-bodyfat"),
+      chest: measurementNumber("measurement-chest"),
+      waist: measurementNumber("measurement-waist"),
+      abdomen: measurementNumber("measurement-abdomen"),
+      hips: measurementNumber("measurement-hips"),
+      arm: measurementNumber("measurement-arm"),
+      thigh: measurementNumber("measurement-thigh"),
+      notes: document.getElementById("measurement-notes").value.trim(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: firebase.auth().currentUser.uid
+    };
+    if (Object.entries(record).every(([key, value]) => ["dateKey", "createdAt", "createdBy"].includes(key) || value === null || value === "")) {
+      throw new Error("أدخلي قياسًا واحدًا على الأقل قبل الحفظ.");
+    }
+    await firebase.firestore().collection("members").doc(currentEditingUid).collection("measurements").add(record);
+    document.getElementById("measurement-form").reset();
+    document.getElementById("measurement-date").value = todayInputDate();
+    measurementAdminMessage("تم حفظ القياسات وإضافتها إلى حساب المشتركة بنجاح ✓", "success");
+    await loadAdminMeasurements(currentEditingUid);
+  } catch (error) {
+    console.error("Save measurement error:", error);
+    measurementAdminMessage(error.message || "تعذر حفظ القياسات. تحققي من صلاحيات Firestore.", "error");
+  } finally { button.disabled = false; }
+}
+
+async function loadAdminMeasurements(uid) {
+  const list = document.getElementById("admin-measurements-list");
+  if (!list) return;
+  list.innerHTML = '<div class="mini-empty">جاري تحميل القياسات...</div>';
+  try {
+    const snap = await firebase.firestore().collection("members").doc(uid).collection("measurements").get();
+    const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => String(b.dateKey || "").localeCompare(String(a.dateKey || "")));
+    if (!records.length) { list.innerHTML = '<div class="mini-empty">لا توجد قياسات مسجلة لهذه المشتركة.</div>'; return; }
+    list.innerHTML = records.map(r => {
+      const vals = [["الوزن",r.weight,"كجم"],["الدهون",r.bodyFat,"%"],["الصدر",r.chest,"سم"],["الخصر",r.waist,"سم"],["البطن",r.abdomen,"سم"],["الأرداف",r.hips,"سم"],["الذراع",r.arm,"سم"],["الفخذ",r.thigh,"سم"]].filter(x => x[1] !== null && x[1] !== undefined && x[1] !== "");
+      return `<div class="measurement-admin-item"><div><strong>${escapeHtml(r.dateKey || "بدون تاريخ")}</strong><span>${vals.map(v => `${v[0]}: ${escapeHtml(v[1])} ${v[2]}`).join(" • ") || "لا توجد قيم"}</span>${r.notes ? `<small>${escapeHtml(r.notes)}</small>` : ""}</div><button type="button" class="measurement-delete-btn" data-measurement-id="${escapeHtml(r.id)}">حذف</button></div>`;
+    }).join("");
+    list.querySelectorAll("[data-measurement-id]").forEach(btn => btn.addEventListener("click", async () => {
+      if (!currentEditingUid || !confirm("هل تريدين حذف سجل القياس هذا؟")) return;
+      btn.disabled = true;
+      try {
+        await firebase.firestore().collection("members").doc(currentEditingUid).collection("measurements").doc(btn.dataset.measurementId).delete();
+        measurementAdminMessage("تم حذف سجل القياس.", "success");
+        await loadAdminMeasurements(currentEditingUid);
+      } catch (error) {
+        console.error(error); measurementAdminMessage("تعذر حذف سجل القياس.", "error"); btn.disabled = false;
+      }
+    }));
+  } catch (error) {
+    console.error("Load admin measurements error:", error);
+    list.innerHTML = '<div class="mini-empty">تعذر تحميل القياسات. تحققي من قواعد Firestore.</div>';
+  }
 }
 
 async function loadMemberAttendance(uid) {
@@ -611,6 +694,7 @@ async function initAdmin() {
   document.getElementById("member-search").addEventListener("input", renderMembers);
   document.getElementById("refresh-members").addEventListener("click", loadMembers);
   document.getElementById("member-form").addEventListener("submit", saveMember);
+  document.getElementById("measurement-form").addEventListener("submit", saveMemberMeasurement);
   document.getElementById("issue-member-link-code").addEventListener("click", issueMemberLinkCode);
   document.getElementById("open-add-member").addEventListener("click", openAddMember);
   document.getElementById("open-add-trainer").addEventListener("click", openAddTrainer);
@@ -623,7 +707,7 @@ async function initAdmin() {
   document.getElementById("closure-form").addEventListener("submit", saveClubClosure);
   document.getElementById("closure-start").min = todayInputDate();
   document.getElementById("closure-end").min = todayInputDate();
-  document.getElementById("close-editor").addEventListener("click", () => { document.getElementById("member-editor").hidden = true; currentEditingUid = null; });
+  document.getElementById("close-editor").addEventListener("click", () => { document.getElementById("member-editor").hidden = true; currentEditingUid = null; document.getElementById("measurement-form").reset(); document.getElementById("admin-measurements-list").innerHTML = '<div class="mini-empty">اختاري مشتركة لعرض قياساتها.</div>'; });
   document.getElementById("admin-logout").addEventListener("click", () => firebase.auth().signOut());
 
   firebase.auth().onAuthStateChanged(async user => {

@@ -109,6 +109,16 @@ async function processDailyAbsences() {
   for (const memberDoc of membersSnap.docs) {
     try {
       const memberRef = memberDoc.ref;
+      // Firestore transactions support document reads, not Query reads. Load absence
+      // requests before the transaction and index them by date for this processing run.
+      const absenceRequestsSnapshot = await memberRef.collection('absenceRequests').get();
+      const absenceRequestsByDate = new Map();
+      for (const requestDoc of absenceRequestsSnapshot.docs) {
+        const requestData = requestDoc.data();
+        if (!requestData.dateKey) continue;
+        if (!absenceRequestsByDate.has(requestData.dateKey)) absenceRequestsByDate.set(requestData.dateKey, []);
+        absenceRequestsByDate.get(requestData.dateKey).push(requestData);
+      }
       const result = await db.runTransaction(async tx => {
         const freshSnap = await tx.get(memberRef);
         if (!freshSnap.exists) return null;
@@ -133,13 +143,9 @@ async function processDailyAbsences() {
 
         const attendanceSnaps = [];
         const calendarSnaps = [];
-        const approvedLeaveSnaps = [];
         for (const key of dates) {
           attendanceSnaps.push(await tx.get(memberRef.collection('attendance').doc(key)));
           calendarSnaps.push(await tx.get(db.collection('clubCalendar').doc(key)));
-          approvedLeaveSnaps.push(await tx.get(
-            memberRef.collection('absenceRequests').where('dateKey', '==', key)
-          ));
         }
 
         let lastProcessed = last;
@@ -155,8 +161,9 @@ async function processDailyAbsences() {
           if (key > endKey) break;
           const calendar = calendarSnaps[i].exists ? calendarSnaps[i].data() : {};
           const attended = attendanceSnaps[i].exists;
-          const approvedLeave = approvedLeaveSnaps[i].docs.some(doc => doc.data().status === 'approved');
-          const approvedLeaveAlreadyApplied = approvedLeaveSnaps[i].docs.some(doc => doc.data().status === 'approved' && doc.data().balanceApplied === true);
+          const dateRequests = absenceRequestsByDate.get(key) || [];
+          const approvedLeave = dateRequests.some(request => request.status === 'approved');
+          const approvedLeaveAlreadyApplied = dateRequests.some(request => request.status === 'approved' && request.balanceApplied === true);
           const isFriday = weekdayForKey(key) === 5;
 
           // Fridays are the club's normal weekly closure; no compensation is added.
@@ -201,6 +208,7 @@ async function processDailyAbsences() {
           graceAbsenceDaysRemaining: graceRemaining,
           absenceAllowanceDays: 7,
           absenceAllowanceDaysRemaining: graceRemaining,
+          graceAbsenceDaysConsumed: Math.max(0, 7 - graceRemaining),
           attendanceLastProcessedDate: lastProcessed,
           attendanceAbsenceProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
           attendancePlanVersion: 2

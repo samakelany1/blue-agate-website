@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="requests.css">
   <link rel="stylesheet" href="tracking.css">
+  <link rel="stylesheet" href="content-admin.css">
 </head>
 <body>
   <header class="admin-topbar">
@@ -45,6 +46,25 @@
           <p>من هنا تديرين بيانات المشتركات والاشتراكات.</p>
         </div>
       </div>
+
+      <section id="content-management-panel" class="admin-card" hidden>
+        <div class="section-head"><div><p class="eyebrow">CLUB CONTENT MANAGEMENT</p><h2>إدارة محتوى الموقع</h2><p>أضيفي وعدّلي واحذفي المحتوى الذي يظهر للمشتركات والزائرات.</p></div></div>
+        <div id="content-admin-message" class="admin-message" hidden></div>
+        <div class="content-tabs">
+          <button type="button" class="active" data-content-tab="announcements">الإعلانات</button>
+          <button type="button" data-content-tab="offers">العروض والأسعار</button>
+          <button type="button" data-content-tab="plans">نظام النادي والباقات</button>
+          <button type="button" data-content-tab="hours">المواعيد والدوام</button>
+          <button type="button" data-content-tab="classes">جدول الكلاسات</button>
+          <button type="button" data-content-tab="rules">التعليمات</button>
+        </div>
+        <div class="section-head"><div><h3 id="content-admin-section-title">الإعلانات</h3></div><button id="add-content-item" class="primary-btn compact-btn" type="button">+ إضافة عنصر</button></div>
+        <div id="content-admin-list" class="members-list"><div class="empty-state">جاري تحميل المحتوى...</div></div>
+        <div id="content-admin-editor" class="content-admin-editor" hidden>
+          <h3 id="content-admin-form-title">إضافة عنصر</h3>
+          <form id="content-admin-form"><div id="content-admin-fields" class="content-admin-fields"></div><div class="content-admin-editor-actions"><button class="primary-btn" type="submit">حفظ</button><button id="cancel-content-edit" class="secondary-btn dark-btn" type="button">إلغاء</button></div></form>
+        </div>
+      </section>
 
       <section class="admin-card admin-requests-card">
         <div class="section-head">
@@ -320,5 +340,6 @@
   <script src="admin.js?v=20261107-measurements-order1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
+  <script src="content-admin.js?v=20261108-1"></script>
 </body>
 </html>

@@ -23,42 +23,26 @@ function backHome() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function schedulePage() {
+async function schedulePage() {
+  let availableDays=days;
+  try{const snap=await firebase.firestore().collection('clubClasses').get();const rows=snap.docs.map(d=>d.data()).filter(x=>x.active!==false);if(rows.length)availableDays=[...new Set(rows.map(x=>x.day).filter(Boolean))];}catch(e){console.warn('Using default weekly schedule',e);}
   show(`
     <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
     <h2>جدول الكلاسات</h2>
     <p class="hero-text">اختاري اليوم لمشاهدة جدول الكلاسات بالتفصيل.</p>
-
-    <div class="day-grid">
-      ${days.map((day, i) => `
-        <button class="day-btn" onclick="dayPage('${day}')">
-          <span style="display:block;font-size:11px;color:#22b9c2;margin-bottom:3px">0${i + 1}</span>
-          ${day}
-        </button>
-      `).join("")}
-    </div>
+    <div class="day-grid">${availableDays.map((day,i)=>`<button class="day-btn" onclick="dayPage('${String(day).replace(/'/g,"\\'")}')"><span style="display:block;font-size:11px;color:#22b9c2;margin-bottom:3px">${String(i+1).padStart(2,'0')}</span>${escapeContent(day)}</button>`).join('')}</div>
   `);
 }
 
-function dayPage(day) {
-  const data = schedule[day];
-
-  show(`
-    <button class="back-btn" onclick="schedulePage()">← العودة للأيام</button>
-    <h2>جدول يوم ${day}</h2>
-    <p class="hero-text">اضغطي على أي كلاس لمعرفة نبذة عنه.</p>
-
-    <div class="day-detail">
-      ${classCard("☀️", "كلاس الصباح • 8:15 ص", data.morning)}
-      ${classCard("🕐", "الكلاس الأول • 3:30 م", data.first)}
-      ${classCard("🕐", "الكلاس الثاني • 6:30 م", data.second)}
-    </div>
-
-    <div class="schedule-note">
-      <strong>ملاحظة</strong>
-      <p>مواعيد الكلاسات متغيرة حسب الجدول الأسبوعي. يرجى الالتزام بالجدول لتحقيق أفضل النتائج.</p>
-    </div>
-  `);
+async function dayPage(day) {
+  try{
+    const snap=await firebase.firestore().collection('clubClasses').where('day','==',day).get();
+    const items=snap.docs.map(d=>d.data()).filter(x=>x.active!==false).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''),'ar'));
+    if(items.length){show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${escapeContent(day)}</h2><p class="hero-text">مواعيد الكلاسات لهذا اليوم.</p><div class="day-detail">${items.map(x=>`<div class="class-row"><div class="class-period">🕒 <span>${escapeContent(x.time||'')}</span></div><div class="class-name">${escapeContent(x.name||'')}</div>${x.description?`<p>${escapeContent(x.description)}</p>`:''}</div>`).join('')}</div>`);return;}
+  }catch(e){console.warn('Using built-in class schedule',e);}
+  const data=schedule[day];
+  if(!data){show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${escapeContent(day)}</h2><p class="placeholder">لا توجد كلاسات مضافة لهذا اليوم.</p>`);return;}
+  show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${day}</h2><p class="hero-text">اضغطي على أي كلاس لمعرفة نبذة عنه.</p><div class="day-detail">${classCard('☀️','كلاس الصباح • 8:15 ص',data.morning)}${classCard('🕐','الكلاس الأول • 3:30 م',data.first)}${classCard('🕐','الكلاس الثاني • 6:30 م',data.second)}</div><div class="schedule-note"><strong>ملاحظة</strong><p>مواعيد الكلاسات متغيرة حسب الجدول الأسبوعي. يرجى الالتزام بالجدول لتحقيق أفضل النتائج.</p></div>`);
 }
 
 function classCard(icon, period, className) {
@@ -252,11 +236,13 @@ function classPage(className) {
 }
 
 function equipmentPage() {
-  window.open(
-    "https://drive.google.com/drive/folders/1GiLuoqMbwMzTpTzXIEKHrovmtEzrxzFh?usp=sharing",
-    "_blank",
-    "noopener,noreferrer"
-  );
+  show(`
+    <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
+    <h2>دليل الأجهزة الرياضية</h2>
+    <p class="hero-text">تصفحي دليل الأجهزة وطريقة الاستخدام من داخل موقع Blue Agate.</p>
+    <div class="equipment-pdf-wrap"><iframe src="assets/device-guide.pdf#toolbar=1&navpanes=0" title="دليل أجهزة نادي العقيق الأزرق" loading="lazy"></iframe></div>
+    <p class="hero-text"><a href="assets/device-guide.pdf" target="_blank" rel="noopener">فتح الدليل في نافذة مستقلة</a></p>
+  `);
 }
 
 function hoursPage() {
@@ -296,49 +282,22 @@ function hoursPage() {
   `);
 }
 
-function newsPage() {
-  show(`
-    <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
-    <h2>الإعلانات</h2>
-    <p class="hero-text">آخر التنبيهات والتحديثات من Blue Agate.</p>
+async function newsPage() {
+  show(`<button class="back-btn" onclick="backHome()">← العودة للرئيسية</button><h2>الإعلانات</h2><p class="hero-text">آخر التنبيهات والتحديثات من Blue Agate.</p><div id="public-announcements" class="announcement-list"><div class="empty-state">جاري تحميل الإعلانات...</div></div>`);
+  const target=document.getElementById('public-announcements');
+  try {
+    const snap=await firebase.firestore().collection('clubAnnouncements').get();
+    const items=snap.docs.map(d=>d.data()).filter(x=>x.active!==false);
+    if(items.length){target.innerHTML=items.map(x=>`<article class="announcement-card"><div class="announcement-badge">📢 إعلان</div>${x.date?`<p class="announcement-date">${escapeContent(x.date)}</p>`:''}<h3>${escapeContent(x.title||'')}</h3><p class="announcement-text">${escapeContent(x.body||'').replace(/\n/g,'<br>')}</p>${x.imageUrl?`<img src="${escapeContent(x.imageUrl)}" alt="${escapeContent(x.title||'إعلان النادي')}" style="max-width:100%;border-radius:14px">`:''}</article>`).join('');}
+    else target.innerHTML='<div class="placeholder">لا توجد إعلانات منشورة حاليًا.</div>';
+  } catch(e){console.error(e);target.innerHTML='<div class="placeholder">تعذر تحميل الإعلانات حاليًا.</div>';}
+}
+function escapeContent(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-    <article class="announcement-card maintenance-announcement">
-      <div class="announcement-badge">📢 تنبيه مهم</div>
-      <p class="announcement-date">15 – 17 سبتمبر</p>
-      <h3>إغلاق النادي للصيانة</h3>
-
-      <p class="announcement-text">
-        مشتركاتنا العزيزات 🤍<br>
-        حرصًا منا على تطوير النادي وتحسين بيئة التدريب، سيتم إغلاق النادي مؤقتًا
-        لمدة 3 أيام لإجراء أعمال الصيانة والتجديد.
-      </p>
-
-      <div class="announcement-days">
-        <div><strong>الثلاثاء</strong><span>15 سبتمبر</span></div>
-        <div><strong>الأربعاء</strong><span>16 سبتمبر</span></div>
-        <div><strong>الخميس</strong><span>17 سبتمبر</span></div>
-      </div>
-
-      <div class="return-date">
-        <span>✨</span>
-        <div>
-          <small>موعد العودة للعمل</small>
-          <strong>السبت 19 سبتمبر</strong>
-        </div>
-      </div>
-
-      <div class="compensation-note">
-        <strong>🤍 يهمنا نوضح لكِ</strong>
-        <p>
-          سيتم تعويض المشتركات عن أيام الإغلاق الثلاثة.
-        </p>
-      </div>
-
-      <p class="announcement-thanks">
-        شكرًا لتفهمكن وتعاونكن، ونسعد دائمًا بتقديم الأفضل لكن.
-      </p>
-    </article>
-  `);
+async function clubRulesPage(){
+  show(`<button class="back-btn" onclick="backHome()">← العودة للرئيسية</button><h2>نظام النادي</h2><p class="hero-text">التعليمات والتنظيمات الخاصة بنادي العقيق الأزرق.</p><div id="club-rules-list"><div class="empty-state">جاري تحميل التعليمات...</div></div>`);
+  const box=document.getElementById('club-rules-list');
+  try{const snap=await firebase.firestore().collection('clubRules').get();const items=snap.docs.map(d=>d.data()).filter(x=>x.active!==false);box.innerHTML=items.length?items.map(x=>`<article class="announcement-card"><h3>${escapeContent(x.title||'')}</h3><p>${escapeContent(x.body||'').replace(/\n/g,'<br>')}</p></article>`).join(''):'<div class="placeholder">سيتم نشر تعليمات النادي هنا قريبًا.</div>';}catch(e){console.error(e);box.innerHTML='<div class="placeholder">تعذر تحميل التعليمات.</div>';}
 }
 
 function placeholderPage(title, text) {
@@ -357,7 +316,7 @@ document.querySelectorAll(".menu-card").forEach(card => {
     if (page === "equipment") equipmentPage();
 
     if (page === "rules") {
-      placeholderPage("نظام النادي", "هنا سنضيف قوانين وتعليمات النادي بشكل مرتب وسهل القراءة.");
+      clubRulesPage();
     }
 
     if (page === "hours") hoursPage();

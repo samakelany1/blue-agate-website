@@ -284,14 +284,18 @@
           <div id="measurement-admin-message" class="admin-message" hidden></div>
           <form id="measurement-form" class="member-form two-column-form">
             <div><label for="measurement-date">تاريخ القياس</label><input id="measurement-date" type="date" required></div>
+            <div><label for="measurement-height">الطول (سم)</label><input id="measurement-height" type="number" min="0" max="250" step="0.1" placeholder="مثال: 160"></div>
             <div><label for="measurement-weight">الوزن (كجم)</label><input id="measurement-weight" type="number" min="0" max="500" step="0.1" placeholder="مثال: 62.5"></div>
-            <div><label for="measurement-bodyfat">نسبة الدهون (%)</label><input id="measurement-bodyfat" type="number" min="0" max="100" step="0.1" placeholder="مثال: 28"></div>
-            <div><label for="measurement-chest">الصدر (سم)</label><input id="measurement-chest" type="number" min="0" max="300" step="0.1"></div>
-            <div><label for="measurement-waist">الخصر (سم)</label><input id="measurement-waist" type="number" min="0" max="300" step="0.1"></div>
-            <div><label for="measurement-abdomen">البطن (سم)</label><input id="measurement-abdomen" type="number" min="0" max="300" step="0.1"></div>
-            <div><label for="measurement-hips">الأرداف (سم)</label><input id="measurement-hips" type="number" min="0" max="300" step="0.1"></div>
-            <div><label for="measurement-arm">الذراع (سم)</label><input id="measurement-arm" type="number" min="0" max="150" step="0.1"></div>
-            <div><label for="measurement-thigh">الفخذ (سم)</label><input id="measurement-thigh" type="number" min="0" max="200" step="0.1"></div>
+            <div><label for="measurement-neck">محيط الرقبة (سم)</label><input id="measurement-neck" type="number" min="0" max="150" step="0.1"></div>
+            <div><label for="measurement-upperarm">محيط العضد (سم)</label><input id="measurement-upperarm" type="number" min="0" max="150" step="0.1"></div>
+            <div><label for="measurement-forearm">محيط الساعد (سم)</label><input id="measurement-forearm" type="number" min="0" max="100" step="0.1"></div>
+            <div><label for="measurement-chest">محيط الصدر (سم)</label><input id="measurement-chest" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-waist">محيط الوسط (سم)</label><input id="measurement-waist" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-abdomen">محيط البطن (سم)</label><input id="measurement-abdomen" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-hips">محيط الأرداف (سم)</label><input id="measurement-hips" type="number" min="0" max="300" step="0.1"></div>
+            <div><label for="measurement-thigh">محيط الفخذ (سم)</label><input id="measurement-thigh" type="number" min="0" max="200" step="0.1"></div>
+            <div><label for="measurement-calf">محيط السمانة (سم)</label><input id="measurement-calf" type="number" min="0" max="150" step="0.1"></div>
+            <div><label for="measurement-ankle">محيط العرقوب (سم)</label><input id="measurement-ankle" type="number" min="0" max="100" step="0.1"></div>
             <div class="full-width"><label for="measurement-notes">ملاحظات المدربة</label><textarea id="measurement-notes" rows="3" maxlength="700" placeholder="ملاحظات اختيارية عن القياس أو التقدم"></textarea></div>
             <div class="full-width"><button id="save-measurement-btn" class="primary-btn" type="submit">حفظ القياسات للمشتركة</button></div>
           </form>
@@ -313,7 +317,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261107-measurements3"></script>
+  <script src="admin.js?v=20261107-measurements-order1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
 </body>

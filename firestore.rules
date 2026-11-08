@@ -61,25 +61,29 @@ service cloud.firestore {
         allow read: if isAdmin() || isOwner(userId);
         allow create: if isAdmin()
           && request.resource.data.keys().hasOnly([
-            'dateKey', 'weight', 'bodyFat', 'chest', 'waist', 'abdomen', 'hips', 'arm', 'thigh',
+            'dateKey', 'height', 'weight', 'neck', 'upperArm', 'forearm', 'chest', 'waist', 'abdomen', 'hips', 'thigh', 'calf', 'ankle',
             'notes', 'createdAt', 'createdBy'
           ])
           && request.resource.data.dateKey is string
           && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.createdAt == request.time
+          && (request.resource.data.height == null || request.resource.data.height is number)
           && (request.resource.data.weight == null || request.resource.data.weight is number)
-          && (request.resource.data.bodyFat == null || request.resource.data.bodyFat is number)
+          && (request.resource.data.neck == null || request.resource.data.neck is number)
+          && (request.resource.data.upperArm == null || request.resource.data.upperArm is number)
+          && (request.resource.data.forearm == null || request.resource.data.forearm is number)
           && (request.resource.data.chest == null || request.resource.data.chest is number)
           && (request.resource.data.waist == null || request.resource.data.waist is number)
           && (request.resource.data.abdomen == null || request.resource.data.abdomen is number)
           && (request.resource.data.hips == null || request.resource.data.hips is number)
-          && (request.resource.data.arm == null || request.resource.data.arm is number)
           && (request.resource.data.thigh == null || request.resource.data.thigh is number)
+          && (request.resource.data.calf == null || request.resource.data.calf is number)
+          && (request.resource.data.ankle == null || request.resource.data.ankle is number)
           && request.resource.data.notes is string;
         allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'dateKey', 'weight', 'bodyFat', 'chest', 'waist', 'abdomen', 'hips', 'arm', 'thigh', 'notes'
+            'dateKey', 'height', 'weight', 'neck', 'upperArm', 'forearm', 'chest', 'waist', 'abdomen', 'hips', 'thigh', 'calf', 'ankle', 'notes'
           ]);
         allow delete: if isAdmin();
       }

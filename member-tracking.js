@@ -34,10 +34,12 @@
       }
       list.innerHTML = records.map(record => {
         const rows = [
-          ["الوزن", record.weight, "كجم"], ["نسبة الدهون", record.bodyFat, "%"],
-          ["الصدر", record.chest, "سم"], ["الخصر", record.waist, "سم"],
-          ["البطن", record.abdomen, "سم"], ["الأرداف", record.hips, "سم"],
-          ["الذراع", record.arm, "سم"], ["الفخذ", record.thigh, "سم"]
+          ["الطول", record.height, "سم"], ["الوزن", record.weight, "كجم"],
+          ["محيط الرقبة", record.neck, "سم"], ["محيط العضد", record.upperArm, "سم"],
+          ["محيط الساعد", record.forearm, "سم"], ["محيط الصدر", record.chest, "سم"],
+          ["محيط الوسط", record.waist, "سم"], ["محيط البطن", record.abdomen, "سم"],
+          ["محيط الأرداف", record.hips, "سم"], ["محيط الفخذ", record.thigh, "سم"],
+          ["محيط السمانة", record.calf, "سم"], ["محيط العرقوب", record.ankle, "سم"]
         ].filter(([, value]) => value !== null && value !== undefined && value !== "");
         const date = record.dateKey ? new Date(`${record.dateKey}T00:00:00`).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) : "تاريخ غير محدد";
         return `<article class="measurement-record"><div class="measurement-record-head"><h3>قياسات ${safe(date)}</h3><span>BLUE AGATE</span></div><div class="measurement-values">${rows.map(([label,value,unit]) => `<div class="measurement-value"><span>${label}</span><strong>${safe(value)} <small>${unit}</small></strong></div>`).join("")}</div>${record.notes ? `<p class="measurement-notes"><strong>ملاحظات المدربة:</strong> ${safe(record.notes)}</p>` : ""}</article>`;

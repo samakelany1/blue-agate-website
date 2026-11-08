@@ -458,14 +458,18 @@ async function saveMemberMeasurement(event) {
     if (!dateKey) throw new Error("حددي تاريخ القياس.");
     const record = {
       dateKey,
+      height: measurementNumber("measurement-height"),
       weight: measurementNumber("measurement-weight"),
-      bodyFat: measurementNumber("measurement-bodyfat"),
+      neck: measurementNumber("measurement-neck"),
+      upperArm: measurementNumber("measurement-upperarm"),
+      forearm: measurementNumber("measurement-forearm"),
       chest: measurementNumber("measurement-chest"),
       waist: measurementNumber("measurement-waist"),
       abdomen: measurementNumber("measurement-abdomen"),
       hips: measurementNumber("measurement-hips"),
-      arm: measurementNumber("measurement-arm"),
       thigh: measurementNumber("measurement-thigh"),
+      calf: measurementNumber("measurement-calf"),
+      ankle: measurementNumber("measurement-ankle"),
       notes: document.getElementById("measurement-notes").value.trim(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: firebase.auth().currentUser.uid
@@ -493,7 +497,7 @@ async function loadAdminMeasurements(uid) {
     const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => String(b.dateKey || "").localeCompare(String(a.dateKey || "")));
     if (!records.length) { list.innerHTML = '<div class="mini-empty">لا توجد قياسات مسجلة لهذه المشتركة.</div>'; return; }
     list.innerHTML = records.map(r => {
-      const vals = [["الوزن",r.weight,"كجم"],["الدهون",r.bodyFat,"%"],["الصدر",r.chest,"سم"],["الخصر",r.waist,"سم"],["البطن",r.abdomen,"سم"],["الأرداف",r.hips,"سم"],["الذراع",r.arm,"سم"],["الفخذ",r.thigh,"سم"]].filter(x => x[1] !== null && x[1] !== undefined && x[1] !== "");
+      const vals = [["الطول",r.height,"سم"],["الوزن",r.weight,"كجم"],["محيط الرقبة",r.neck,"سم"],["محيط العضد",r.upperArm,"سم"],["محيط الساعد",r.forearm,"سم"],["محيط الصدر",r.chest,"سم"],["محيط الوسط",r.waist,"سم"],["محيط البطن",r.abdomen,"سم"],["محيط الأرداف",r.hips,"سم"],["محيط الفخذ",r.thigh,"سم"],["محيط السمانة",r.calf,"سم"],["محيط العرقوب",r.ankle,"سم"]].filter(x => x[1] !== null && x[1] !== undefined && x[1] !== "");
       return `<div class="measurement-admin-item"><div><strong>${escapeHtml(r.dateKey || "بدون تاريخ")}</strong><span>${vals.map(v => `${v[0]}: ${escapeHtml(v[1])} ${v[2]}`).join(" • ") || "لا توجد قيم"}</span>${r.notes ? `<small>${escapeHtml(r.notes)}</small>` : ""}</div><button type="button" class="measurement-delete-btn" data-measurement-id="${escapeHtml(r.id)}">حذف</button></div>`;
     }).join("");
     list.querySelectorAll("[data-measurement-id]").forEach(btn => btn.addEventListener("click", async () => {

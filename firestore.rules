@@ -179,6 +179,25 @@ service cloud.firestore {
       }
     }
 
+
+    // One-time linking codes: admins create/manage; unauthenticated visitors
+    // may fetch a known active code during registration (the code is high-entropy).
+    match /memberLinkCodes/{codeHash} {
+      allow get: if resource.data.status == "active";
+      allow list: if false;
+      allow create: if isAdmin()
+        && request.resource.data.status == "active"
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.status == "active"
+          && request.resource.data.status == "used"
+          && request.resource.data.usedBy == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["status", "usedBy", "usedAt"]));
+      allow delete: if isAdmin();
+    }
+
     match /subscriptionRecords/{recordId} {
       allow read, create, update, delete: if isAdmin();
     }

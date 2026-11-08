@@ -102,9 +102,9 @@ async function registerMember(event) {
       batch.update(db.collection("memberLinkCodes").doc(linkCodeHash), {
         status: "used", usedBy: user.uid, usedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      batch.update(db.collection("members").doc(linkCodeData.sourceMemberId), {
-        linkedToUid: user.uid, loginEnabled: true, linkedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      // The source imported record belongs to the admin, not the newly
+      // registered UID. Keep the source reference in the new member record;
+      // do not attempt to update another member's protected document here.
       await batch.commit();
       showAuthMessage("تم إنشاء حسابك وربط سجل اشتراكاتك السابق بنجاح. أهلًا بكِ في Blue Agate!", "success");
     } else {

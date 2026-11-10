@@ -219,9 +219,6 @@ footer span { font-size: 9px; letter-spacing: 1.2px; }
   overflow: hidden;
   background: #f6fbfb;
 }
-.class-row.class-clickable { width: 100%; text-align: right; cursor: pointer; font: inherit; }
-.class-row.class-clickable:hover { border-color: var(--teal); }
-.class-extra-note { grid-column: 1 / -1; padding: 10px 14px; color: var(--navy); background: var(--teal-light); border-top: 1px solid var(--border); font-size: 12px; font-weight: 700; }
 .class-period {
   background: var(--navy);
   color: white;
@@ -327,3 +324,14 @@ footer span { font-size: 9px; letter-spacing: 1.2px; }
 /* Embedded in-site device guide */
 .equipment-pdf-wrap{width:100%;height:min(78vh,900px);min-height:520px;border:1px solid #dbe7ec;border-radius:18px;overflow:hidden;background:#eef5f8;box-shadow:0 10px 28px rgba(16,40,61,.08)}
 .equipment-pdf-wrap iframe{width:100%;height:100%;border:0}
+
+
+/* Subscription adjustment notices */
+.subscription-adjustment-notices{display:grid;gap:8px;margin-top:8px;width:100%}
+.adjustment-notice-title{font-size:.84rem;font-weight:800;color:#123b5a}
+.adjustment-notice{display:grid;gap:4px;padding:11px 13px;border:1px solid rgba(34,185,194,.24);border-radius:13px;background:#f0fbfb;color:#173b57;font-size:.82rem}
+.adjustment-notice strong{color:#168b91}
+.adjustment-notice small{color:#647486;line-height:1.7}
+.contact-links-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:20px}
+.contact-link{display:block;padding:17px 20px;border:1px solid rgba(16,40,61,.1);border-radius:16px;background:#fff;color:#123b5a;text-decoration:none;font-weight:700;box-shadow:0 6px 20px rgba(15,35,55,.05)}
+.contact-link:hover{border-color:#22b9c2;background:#f0fbfb}

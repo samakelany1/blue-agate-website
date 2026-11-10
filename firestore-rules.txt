@@ -3,228 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin";
-    }
-
-    function isOwner(userId) {
-      return signedIn() && request.auth.uid == userId;
-    }
-
-    function memberPath(userId) {
-      return /databases/$(database)/documents/members/$(userId);
-    }
-
-    function calendarPath(dateKey) {
-      return /databases/$(database)/documents/clubCalendar/$(dateKey);
-    }
-
-    function memberCanAttend(userId) {
-      return exists(memberPath(userId))
-        && get(memberPath(userId)).data.active != false
-        && get(memberPath(userId)).data.membershipActive != false
-        && get(memberPath(userId)).data.startDate is timestamp
-        && get(memberPath(userId)).data.endDate is timestamp
-        && get(memberPath(userId)).data.startDate <= request.time
-        && get(memberPath(userId)).data.endDate >= request.time;
-    }
-
-    function clubIsOpen(dateKey) {
-      return !exists(calendarPath(dateKey))
-        || (get(calendarPath(dateKey)).data.closed != true
-          && get(calendarPath(dateKey)).data.type != "closed");
-    }
-
-    match /admins/{adminId} {
-      allow read: if isAdmin() || isOwner(adminId);
-      allow write: if false;
-    }
-
     match /members/{userId} {
-      allow create: if isAdmin() || isOwner(userId);
-      allow read: if isAdmin() || isOwner(userId);
+      // إنشاء سجل العضوة عند إنشاء الحساب
+      allow create: if request.auth != null
+                    && request.auth.uid == userId;
 
-      allow update: if isAdmin()
-        || (isOwner(userId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone']));
+      // العضوة تستطيع قراءة بيانات حسابها فقط
+      allow read: if request.auth != null
+                   && request.auth.uid == userId;
 
-      allow delete: if isAdmin();
-
-      match /measurements/{measurementId} {
-        // Members can view only their own measurements. Only admins can add, edit, or delete.
-        allow read: if isAdmin() || isOwner(userId);
-        allow create: if isAdmin()
-          && request.resource.data.keys().hasOnly([
-            'dateKey', 'height', 'weight', 'neck', 'upperArm', 'forearm', 'chest', 'waist', 'abdomen', 'hips', 'thigh', 'calf', 'ankle',
-            'notes', 'createdAt', 'createdBy'
-          ])
-          && request.resource.data.dateKey is string
-          && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-          && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdAt == request.time
-          && (request.resource.data.height == null || request.resource.data.height is number)
-          && (request.resource.data.weight == null || request.resource.data.weight is number)
-          && (request.resource.data.neck == null || request.resource.data.neck is number)
-          && (request.resource.data.upperArm == null || request.resource.data.upperArm is number)
-          && (request.resource.data.forearm == null || request.resource.data.forearm is number)
-          && (request.resource.data.chest == null || request.resource.data.chest is number)
-          && (request.resource.data.waist == null || request.resource.data.waist is number)
-          && (request.resource.data.abdomen == null || request.resource.data.abdomen is number)
-          && (request.resource.data.hips == null || request.resource.data.hips is number)
-          && (request.resource.data.thigh == null || request.resource.data.thigh is number)
-          && (request.resource.data.calf == null || request.resource.data.calf is number)
-          && (request.resource.data.ankle == null || request.resource.data.ankle is number)
-          && request.resource.data.notes is string;
-        allow update: if isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'dateKey', 'height', 'weight', 'neck', 'upperArm', 'forearm', 'chest', 'waist', 'abdomen', 'hips', 'thigh', 'calf', 'ankle', 'notes'
-          ]);
-        allow delete: if isAdmin();
-      }
-
-      match /subscriptionAdjustments/{adjustmentId} {
-        allow read: if isAdmin() || isOwner(userId);
-        allow create: if isAdmin();
-        allow update, delete: if isAdmin();
-      }
+      // العضوة تستطيع تعديل الاسم ورقم الجوال فقط.
+      // بيانات الاشتراك لا تعدل من حساب العضوة.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['name', 'phone']);
 
       match /attendance/{attendanceId} {
-        allow read: if isAdmin() || isOwner(userId);
-        allow create: if isAdmin()
-          || (isOwner(userId)
-            && attendanceId == request.resource.data.dateKey
-            && request.resource.data.uid == request.auth.uid
-            && request.resource.data.keys().hasOnly(['uid', 'dateKey', 'timestamp'])
-            && request.resource.data.timestamp == request.time
-            && memberCanAttend(userId)
-            && clubIsOpen(request.resource.data.dateKey)
-            && !exists(/databases/$(database)/documents/members/$(userId)/attendance/$(attendanceId)));
-        allow update, delete: if isAdmin();
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
       }
-
-      match /absenceRequests/{requestId} {
-        allow read: if isAdmin() || isOwner(userId);
-        allow create: if isOwner(userId)
-          && request.resource.data.keys().hasOnly(['uid', 'memberName', 'type', 'dateKey', 'reason', 'status', 'createdAt'])
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.type == 'absence'
-          && request.resource.data.dateKey is string
-          && request.resource.data.reason is string
-          && request.resource.data.reason.size() > 0
-          && request.resource.data.status == 'pending'
-          && request.resource.data.createdAt == request.time;
-        allow update: if isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'reviewNote', 'reviewedAt', 'reviewedBy', 'balanceApplied'])
-          && request.resource.data.status in ['approved', 'rejected'];
-        allow delete: if isAdmin();
-      }
-
-      match /medicalRequests/{requestId} {
-        allow read: if isAdmin() || isOwner(userId);
-        allow create: if isOwner(userId)
-          && request.resource.data.keys().hasOnly([
-            'uid', 'memberName', 'type', 'startDate', 'endDate', 'reason',
-            'attachmentPath', 'attachmentName', 'attachmentType', 'attachmentSize',
-            'status', 'createdAt'
-          ])
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.type == 'medical'
-          && request.resource.data.startDate is string
-          && request.resource.data.endDate is string
-          && request.resource.data.startDate <= request.resource.data.endDate
-          && request.resource.data.reason is string
-          && request.resource.data.reason.size() > 0
-          && request.resource.data.attachmentPath is string
-          && request.resource.data.attachmentPath.matches('memberRequests/' + userId + '/.*')
-          && request.resource.data.attachmentType in ['image/jpeg', 'image/png', 'application/pdf']
-          && request.resource.data.attachmentSize is int
-          && request.resource.data.attachmentSize > 0
-          && request.resource.data.attachmentSize <= 5242880
-          && request.resource.data.status == 'pending'
-          && request.resource.data.createdAt == request.time;
-        allow update: if isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'reviewNote', 'reviewedAt', 'reviewedBy'])
-          && request.resource.data.status in ['approved', 'rejected'];
-        allow delete: if isAdmin();
-      }
-    }
-
-    match /staff/{staffId} {
-      allow read: if isAdmin() || isOwner(staffId);
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin()
-        || (isOwner(staffId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phone']));
-
-      match /schedule/{scheduleId} {
-        allow read: if isAdmin() || isOwner(staffId);
-        allow write: if isAdmin();
-      }
-
-      match /classes/{classId} {
-        allow read: if isAdmin() || isOwner(staffId);
-        allow write: if isAdmin();
-      }
-
-      match /attendance/{attendanceId} {
-        allow read: if isAdmin() || isOwner(staffId);
-        allow create: if isAdmin()
-          || (isOwner(staffId)
-            && request.resource.data.uid == request.auth.uid
-            && request.resource.data.dateKey == attendanceId
-            && request.resource.data.keys().hasOnly(['uid', 'dateKey', 'timestamp']));
-        allow update, delete: if isAdmin();
-      }
-    }
-
-
-    // One-time linking codes: admins create/manage; unauthenticated visitors
-    // may fetch a known active code during registration (the code is high-entropy).
-    match /memberLinkCodes/{codeHash} {
-      allow get: if resource.data.status == "active";
-      allow list: if false;
-      allow create: if isAdmin()
-        && request.resource.data.status == "active"
-        && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin()
-        || (signedIn()
-          && resource.data.status == "active"
-          && request.resource.data.status == "used"
-          && request.resource.data.usedBy == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(["status", "usedBy", "usedAt"]));
-      allow delete: if isAdmin();
-    }
-
-    match /subscriptionRecords/{recordId} {
-      allow read, create, update, delete: if isAdmin();
-    }
-
-    // Public club content is readable by visitors; only verified admins can manage it.
-    match /clubContentMeta/{metaId} { allow read: if isAdmin(); allow create, update, delete: if isAdmin(); }
-    match /clubAnnouncements/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-    match /clubOffers/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-    match /clubPlans/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-    match /clubSettings/{settingId} {
-      allow read: if settingId == "contact";
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /clubHours/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-    match /clubClasses/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-    match /clubRules/{itemId} { allow read: if true; allow create, update, delete: if isAdmin(); }
-
-    match /clubCalendar/{dateKey} {
-      allow read: if signedIn();
-      allow write: if isAdmin();
     }
   }
 }

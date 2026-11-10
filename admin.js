@@ -394,81 +394,31 @@ async function saveClubClosure(event) {
   const endKey = document.getElementById("closure-end").value;
   const closureType = document.getElementById("closure-type").value;
   const note = document.getElementById("closure-note").value.trim();
-  if (!startKey || !endKey || endKey < startKey || startKey < todayInputDate()) {
-    closureMessage("اختاري تاريخًا من اليوم أو بعده، وتأكدي من ترتيب البداية والنهاية.", "error"); return;
-  }
+  if (!startKey || !endKey || endKey < startKey || startKey < todayInputDate()) { closureMessage("اختاري تاريخًا من اليوم أو بعده، وتأكدي من ترتيب البداية والنهاية.", "error"); return; }
   const start = new Date(`${startKey}T00:00:00`), end = new Date(`${endKey}T00:00:00`);
   const keys = [];
   for (const d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
-    keys.push(keyDate(d)); if (keys.length > 90) break;
+    keys.push(keyDate(d));
+    if (keys.length > 90) break;
   }
   if (!keys.length || keys.length > 90) { closureMessage("يمكن تسجيل 90 يوم إغلاق كحد أقصى في العملية الواحدة.", "error"); return; }
   const button = event.submitter; if (button) button.disabled = true;
   try {
     const db = firebase.firestore();
-    const calendarOps = keys.map(key => ({
-      ref: db.collection("clubCalendar").doc(key),
-      data: { dateKey:key, closed:true, type:"closed", closureType, reason:note,
-        closureCreatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        closureCreatedBy:firebase.auth().currentUser.uid },
-      merge: true
-    }));
-    const membersSnap = await db.collection("members").get();
-    const memberOps = [];
-    const nextKey = key => { const d = new Date(`${key}T00:00:00`); d.setDate(d.getDate()+1); return keyDate(d); };
-    for (const memberDoc of membersSnap.docs) {
-      const member = memberDoc.data();
-      if (member.active === false || member.membershipActive === false) continue;
-      const startDate = toDateObject(member.startDate), endDate = toDateObject(member.endDate);
-      if (!startDate || !endDate) continue;
-      const memberStartKey = keyDate(startDate);
-      let currentEndKey = keyDate(endDate);
-      const already = Array.isArray(member.compensatedClosureDates) ? [...member.compensatedClosureDates] : [];
-      const newCompensated = [];
-      const records = [];
-      for (const key of keys) {
-        const weekday = new Date(`${key}T12:00:00`).getDay();
-        if (key < memberStartKey || key > currentEndKey || weekday === 5 || already.includes(key)) continue;
-        const before = currentEndKey;
-        currentEndKey = nextKey(currentEndKey);
-        already.push(key); newCompensated.push(key);
-        records.push({ key, before, after:currentEndKey });
-      }
-      if (!records.length) continue;
-      memberOps.push({
-        ref: memberDoc.ref,
-        data: {
-          endDate: localDateToTimestamp(currentEndKey, true),
-          compensatedClosureDates: already,
-          subscriptionExtensionDaysTotal: firebase.firestore.FieldValue.increment(records.length),
-          subscriptionLastAdjustmentAt: firebase.firestore.FieldValue.serverTimestamp()
-        }
-      });
-      records.forEach(record => memberOps.push({
-        ref: memberDoc.ref.collection("subscriptionAdjustments").doc(`closure_${record.key}`),
-        data: {
-          type:"closure", days:1,
-          reason: note || (closureType === "maintenance" ? "صيانة النادي" : closureType === "holiday" ? "مناسبة / إجازة" : "إغلاق النادي"),
-          closureType, closureDate:record.key,
-          beforeEndDate:record.before, afterEndDate:record.after,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-          createdBy:firebase.auth().currentUser.uid,
-          visibleToMember:true
-        }
-      }));
-    }
-    const ops = [...calendarOps, ...memberOps];
-    for (let offset = 0; offset < ops.length; offset += 400) {
+    for (let offset = 0; offset < keys.length; offset += 400) {
       const batch = db.batch();
-      ops.slice(offset, offset+400).forEach(op => batch.set(op.ref, op.data, op.merge ? { merge:true } : { merge:true }));
+      keys.slice(offset, offset+400).forEach(key => batch.set(db.collection("clubCalendar").doc(key), {
+        dateKey: key, closed: true, type: "closed", closureType, reason: note,
+        closureCreatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        closureCreatedBy: firebase.auth().currentUser.uid
+      }, { merge: true }));
       await batch.commit();
     }
-    const extendedMembers = new Set(memberOps.filter(op => op.ref.parent && op.ref.parent.id === "members").map(op => op.ref.id)).size;
-    closureMessage(`تم تسجيل ${keys.length} يوم إغلاق وتحديث اشتراكات ${extendedMembers} مشتركة مؤهلة فورًا. سيظهر لكل مشتركة تاريخ الانتهاء قبل الإضافة وبعدها، دون تغيير رصيد أيام الحضور أو السماح.`, "success");
+    closureMessage(`تم تسجيل ${keys.length} يوم إغلاق. سيُمدد النظام نهاية الاشتراكات المؤهلة يومًا عن كل يوم إغلاق، دون المساس برصيد 30 أو 7.`, "success");
     document.getElementById("closure-form").reset();
     await loadClubClosures();
   } catch (error) {
-    console.error(error); closureMessage("تعذر حفظ الإغلاق أو تحديث الاشتراكات. راجعي صلاحيات Firestore.", "error");
+    console.error(error); closureMessage("تعذر حفظ الإغلاق. تحققي من صلاحيات Firestore.", "error");
   } finally { if (button) button.disabled = false; }
 }
 

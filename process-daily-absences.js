@@ -173,26 +173,8 @@ async function processDailyAbsences() {
 
           // A recorded club-wide closure extends the membership end date by one calendar day.
           if (isClubClosed(calendar)) {
-            // Some future closure dates are compensated immediately by the admin panel.
-            // Skip those dates here so the scheduled processor cannot extend twice.
-            if (!arrayHas(member.compensatedClosureDates, key)) {
-              const beforeEndKey = endKey;
-              endKey = addDays(endKey, 1);
-              closedCompensationDays++;
-              const adjustmentRef = memberRef.collection('subscriptionAdjustments').doc(`closure_${key}`);
-              tx.set(adjustmentRef, {
-                type: 'closure',
-                days: 1,
-                reason: calendar.reason || calendar.closureType || 'إغلاق النادي',
-                closureType: calendar.closureType || 'other',
-                closureDate: key,
-                beforeEndDate: beforeEndKey,
-                afterEndDate: endKey,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                createdBy: calendar.closureCreatedBy || 'system',
-                visibleToMember: true
-              }, { merge: true });
-            }
+            endKey = addDays(endKey, 1);
+            closedCompensationDays++;
             lastProcessed = key; processed++; continue;
           }
 
@@ -231,14 +213,7 @@ async function processDailyAbsences() {
           attendanceAbsenceProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
           attendancePlanVersion: 2
         };
-        if (closedCompensationDays > 0) {
-          update.endDate = timestampAtKsaEndOfDay(endKey);
-          update.compensatedClosureDates = admin.firestore.FieldValue.arrayUnion(...dates.filter(key => {
-            const cal = calendarSnaps[dates.indexOf(key)];
-            return cal && cal.exists && isClubClosed(cal.data()) && !arrayHas(member.compensatedClosureDates, key);
-          }));
-          update.subscriptionExtensionDaysTotal = admin.firestore.FieldValue.increment(closedCompensationDays);
-        }
+        if (closedCompensationDays > 0) update.endDate = timestampAtKsaEndOfDay(endKey);
         tx.set(memberRef, update, { merge: true });
         return { datesProcessed: processed, attendanceDaysRemaining: attendanceRemaining,
           graceAbsenceDaysRemaining: graceRemaining, approvedLeaveDays, ordinaryGraceDays,

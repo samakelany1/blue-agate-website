@@ -24,8 +24,25 @@ function backHome() {
 }
 
 async function schedulePage() {
-  let availableDays=days;
-  try{const snap=await firebase.firestore().collection('clubClasses').get();const rows=snap.docs.map(d=>d.data()).filter(x=>x.active!==false);if(rows.length)availableDays=[...new Set(rows.map(x=>x.day).filter(Boolean))];}catch(e){console.warn('Using default weekly schedule',e);}
+  const orderedDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+  let availableDays = [...days];
+  try {
+    const snap = await firebase.firestore().collection("clubClasses").get();
+    const rows = snap.docs.map(d => d.data()).filter(x => x.active !== false);
+    if (rows.length) {
+      const savedDays = new Set(rows.map(x => x.day).filter(Boolean));
+      availableDays = orderedDays.filter(day => savedDays.has(day));
+      // Keep any custom day names after the standard week, without losing them.
+      rows.map(x => x.day).filter(Boolean).forEach(day => {
+        if (!orderedDays.includes(day) && !availableDays.includes(day)) availableDays.push(day);
+      });
+    } else {
+      availableDays = orderedDays.filter(day => schedule[day]);
+    }
+  } catch (e) {
+    console.warn("Using default weekly schedule", e);
+    availableDays = orderedDays.filter(day => schedule[day]);
+  }
   show(`
     <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
     <h2>جدول الكلاسات</h2>
@@ -38,7 +55,13 @@ async function dayPage(day) {
   try{
     const snap=await firebase.firestore().collection('clubClasses').where('day','==',day).get();
     const items=snap.docs.map(d=>d.data()).filter(x=>x.active!==false).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''),'ar'));
-    if(items.length){show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${escapeContent(day)}</h2><p class="hero-text">مواعيد الكلاسات لهذا اليوم.</p><div class="day-detail">${items.map(x=>`<div class="class-row"><div class="class-period">🕒 <span>${escapeContent(x.time||'')}</span></div><div class="class-name">${escapeContent(x.name||'')}</div>${x.description?`<p>${escapeContent(x.description)}</p>`:''}</div>`).join('')}</div>`);return;}
+    if(items.length){
+      show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${escapeContent(day)}</h2><p class="hero-text">اضغطي على أي كلاس لمعرفة الأجزاء المستهدفة ومعلومات الحصة.</p><div class="day-detail">${items.map(x=>{
+        const className = x.name || x.className || "";
+        const safeName = String(className).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+        return `<button class="class-row class-clickable" type="button" onclick="classPage('${safeName}')"><div class="class-period">🕒 <span>${escapeContent(x.time||'موعد الكلاس')}</span></div><div class="class-name"><span>${escapeContent(className)}</span><span class="class-arrow">←</span></div>${x.description?`<p>${escapeContent(x.description)}</p>`:''}</button>`;
+      }).join('')}</div>`);return;
+    }
   }catch(e){console.warn('Using built-in class schedule',e);}
   const data=schedule[day];
   if(!data){show(`<button class="back-btn" onclick="schedulePage()">← العودة للأيام</button><h2>جدول يوم ${escapeContent(day)}</h2><p class="placeholder">لا توجد كلاسات مضافة لهذا اليوم.</p>`);return;}
@@ -292,6 +315,27 @@ async function newsPage() {
     else target.innerHTML='<div class="placeholder">لا توجد إعلانات منشورة حاليًا.</div>';
   } catch(e){console.error(e);target.innerHTML='<div class="placeholder">تعذر تحميل الإعلانات حاليًا.</div>';}
 }
+
+async function contactPage() {
+  show(`<button class="back-btn" onclick="backHome()">← العودة للرئيسية</button><h2>تواصل معنا</h2><p class="hero-text">يسعدنا تواصلكِ معنا، اختاري وسيلة التواصل المناسبة.</p><div id="club-contact-details" class="contact-details"><div class="empty-state">جاري تحميل بيانات التواصل...</div></div>`);
+  const target = document.getElementById("club-contact-details");
+  try {
+    const snap = await firebase.firestore().collection("clubSettings").doc("contact").get();
+    const c = snap.exists ? snap.data() : {};
+    const links = [];
+    if (c.phone) links.push(`<a class="contact-link" href="tel:${escapeContent(c.phone)}">📞 الاتصال: ${escapeContent(c.phone)}</a>`);
+    if (c.whatsapp) links.push(`<a class="contact-link" href="${escapeContent(c.whatsapp)}" target="_blank" rel="noopener">💬 التواصل عبر واتساب</a>`);
+    if (c.email) links.push(`<a class="contact-link" href="mailto:${escapeContent(c.email)}">✉️ ${escapeContent(c.email)}</a>`);
+    if (c.instagram) links.push(`<a class="contact-link" href="${escapeContent(c.instagram)}" target="_blank" rel="noopener">📷 إنستغرام</a>`);
+    if (c.snapchat) links.push(`<a class="contact-link" href="${escapeContent(c.snapchat)}" target="_blank" rel="noopener">👻 سناب شات</a>`);
+    if (c.location) links.push(`<div class="contact-link">📍 ${escapeContent(c.location)}</div>`);
+    target.innerHTML = links.length ? `<div class="contact-links-grid">${links.join("")}</div>` : '<div class="placeholder">سيتم تحديث بيانات التواصل قريبًا.</div>';
+  } catch (e) {
+    console.error(e);
+    target.innerHTML = '<div class="placeholder">تعذر تحميل بيانات التواصل حاليًا.</div>';
+  }
+}
+
 function escapeContent(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 async function clubRulesPage(){
@@ -326,7 +370,7 @@ document.querySelectorAll(".menu-card").forEach(card => {
     }
 
     if (page === "contact") {
-      placeholderPage("تواصل معنا", "هنا سنضيف رقم التواصل، الموقع، وحسابات النادي.");
+      contactPage();
     }
   });
 });

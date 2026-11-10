@@ -227,7 +227,9 @@
               <div><span>المتبقية</span><strong id="absence-days-left">—</strong><small>يوم تعويض</small></div>
             </div>
             <div class="tracking-progress"><div id="absence-progress-bar"></div></div>
-            <p id="absence-balance-note" class="tracking-note">يتم تحديث الرصيد وفق أيام الغياب المحتسبة في نظام النادي.</p>
+            <p id="absence-balance-note" class="tracking-note">يتم تحديث الرصيد وفق طلبات الغياب المعتمدة.</p>
+            <h3 class="absence-history-title">سجل الغياب</h3>
+            <div id="member-absence-history" class="absence-history-list"><div class="tracking-empty">جاري تحميل سجل الغياب...</div></div>
           </div>
         </section>
       </div>
@@ -273,11 +275,11 @@
           </div>
         </div>
 
-        <section class="member-qr-card" aria-label="رمز حضور العضوة">
-          <h3>رمز الحضور الخاص بكِ</h3>
-          <p>اعرضي هذا الرمز عند الاستقبال لتسجيل حضورك.</p>
+        <section class="member-qr-card" aria-label="بطاقة بيانات المشتركة">
+          <h3>بطاقة بياناتكِ</h3>
+          <p>اعرضي هذا الرمز عند الاستقبال لعرض بيانات عضويتكِ وقياساتكِ للموظفة أو المدربة المصرّح لها.</p>
           <div id="member-qr-code" class="member-qr-code" aria-label="رمز QR الخاص بالعضوية"></div>
-          <small id="member-qr-status" role="status">جارٍ تجهيز رمز العضوية...</small>
+          <small id="member-qr-status" role="status">هذا الرمز لعرض بيانات العضوية فقط، ولا يسجل الحضور أو الغياب.</small>
         </section>
 
         <div class="profile-info-grid">
@@ -332,8 +334,8 @@
   <script src="auth.js?v=20261105-link1"></script>
   <script src="attendance.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="profile.js?v=20261107-measurements-order1"></script>
-  <script src="member-tracking.js?v=20261107-measurements-order1"></script>
+  <script src="profile.js?v=20261110-member-card1"></script>
+  <script src="member-tracking.js?v=20261110-absence-history1"></script>
   <script src="subscription-countdown.js?v=20261110-adjustments"></script>
   <script src="app-layout.js"></script>
   <script src="requests-member.js"></script>

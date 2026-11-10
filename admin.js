@@ -4,6 +4,7 @@
 let allMembers = [];
 let currentEditingUid = null;
 let allTrainers = [];
+let memberListFilter = "all";
 
 function adminMessage(message, type = "info") {
   const box = document.getElementById("admin-login-message");
@@ -149,14 +150,29 @@ function updateStats() {
   document.getElementById("members-count").textContent = allMembers.length;
   document.getElementById("active-count").textContent = active;
   document.getElementById("expired-count").textContent = expired;
+  const soon = allMembers.filter(m => {
+    const end = toDateObject(m.endDate); if (!end) return false;
+    const today = new Date(); today.setHours(0,0,0,0); end.setHours(23,59,59,999);
+    const days = Math.ceil((end - today) / 86400000);
+    return days >= 0 && days <= 7;
+  }).length;
+  const soonEl = document.getElementById("soon-count"); if (soonEl) soonEl.textContent = soon;
 }
 
 function renderMembers() {
   const list = document.getElementById("members-list");
   const term = document.getElementById("member-search").value.trim().toLowerCase();
   const filtered = allMembers.filter(member => {
+    const state = subscriptionState(member.endDate);
+    const end = toDateObject(member.endDate);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const days = end ? Math.ceil((new Date(end.setHours(23,59,59,999)) - today) / 86400000) : null;
+    const matchesFilter = memberListFilter === "all" ||
+      (memberListFilter === "active" && state === "active") ||
+      (memberListFilter === "expired" && state === "expired") ||
+      (memberListFilter === "soon" && days !== null && days >= 0 && days <= 7);
     const text = [member.name, member.email, member.phone, member.membershipType].filter(Boolean).join(" ").toLowerCase();
-    return text.includes(term);
+    return matchesFilter && text.includes(term);
   });
 
   if (!filtered.length) {
@@ -746,6 +762,12 @@ async function initAdmin() {
   firebase.initializeApp(firebaseConfig);
   document.getElementById("admin-login-form").addEventListener("submit", loginAdmin);
   document.getElementById("member-search").addEventListener("input", renderMembers);
+  document.querySelectorAll("[data-member-filter]").forEach(button => button.addEventListener("click", () => {
+    memberListFilter = button.dataset.memberFilter;
+    document.querySelectorAll("[data-member-filter]").forEach(item => item.classList.toggle("active-filter", item === button));
+    renderMembers();
+    document.getElementById("members-list").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }));
   document.getElementById("refresh-members").addEventListener("click", loadMembers);
   document.getElementById("member-form").addEventListener("submit", saveMember);
   document.getElementById("measurement-form").addEventListener("submit", saveMemberMeasurement);

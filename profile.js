@@ -45,7 +45,7 @@ function renderMemberQRCode(uid) {
 
   // This QR contains the Firebase Auth UID only; it is an identifier, not proof of identity.
   new QRCode(container, { text: uid, width: 180, height: 180, colorDark: "#10283d", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
-  status.textContent = "اعرضي الرمز عند الاستقبال. لا يثبت الرمز وحده هوية حاملته.";
+  status.textContent = "رمز لعرض بطاقة بياناتكِ وقياساتكِ فقط؛ لا يسجل الحضور أو الغياب.";
 }
 
 async function loadMemberProfile() {
@@ -60,6 +60,7 @@ async function loadMemberProfile() {
 
     const data = doc.data();
     if (typeof renderAbsenceBalance === "function") renderAbsenceBalance(data);
+    if (typeof loadMemberAbsenceHistory === "function") await loadMemberAbsenceHistory(user.uid);
     if (typeof loadMemberMeasurements === "function") await loadMemberMeasurements(user.uid);
     const name = data.name || user.displayName || "عضوة Blue Agate";
     const email = data.email || user.email || "";

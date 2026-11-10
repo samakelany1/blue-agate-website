@@ -133,21 +133,24 @@
       </section>
 
       <div class="stats-grid">
-        <div class="stat-card">
+        <button class="stat-card stat-filter active-filter" type="button" data-member-filter="all">
           <span>👥</span>
           <strong id="members-count">0</strong>
           <small>إجمالي المشتركات</small>
-        </div>
-        <div class="stat-card">
+        </button>
+        <button class="stat-card stat-filter" type="button" data-member-filter="active">
           <span>🟢</span>
           <strong id="active-count">0</strong>
           <small>اشتراكات نشطة</small>
-        </div>
-        <div class="stat-card">
+        </button>
+        <button class="stat-card stat-filter" type="button" data-member-filter="expired">
           <span>🔴</span>
           <strong id="expired-count">0</strong>
           <small>اشتراكات منتهية</small>
-        </div>
+        </button>
+        <button class="stat-card stat-filter" type="button" data-member-filter="soon">
+          <span>⏳</span><strong id="soon-count">0</strong><small>اشتراكات قريبة الانتهاء (7 أيام)</small>
+        </button>
       </div>
 
       <section class="admin-card">
@@ -364,7 +367,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261107-measurements-order1"></script>
+  <script src="admin.js?v=20261110-member-filters1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
   <script src="content-admin.js?v=20261108-1"></script>\n  <script src="admin-enhancements.js?v=20261110-1"></script>

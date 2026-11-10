@@ -20,6 +20,27 @@
       : "استهلكتِ كامل رصيد أيام التعويض السبعة. بعد ذلك تُحتسب أيام الغياب وفق نظام الاشتراك.";
   };
 
+  window.loadMemberAbsenceHistory = async function (uid) {
+    const list = document.getElementById("member-absence-history");
+    if (!list || !uid) return;
+    list.innerHTML = '<div class="tracking-empty">جاري تحميل سجل الغياب...</div>';
+    try {
+      const snap = await firebase.firestore().collection("members").doc(uid).collection("absenceRequests").orderBy("dateKey", "desc").get();
+      const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (!records.length) { list.innerHTML = '<div class="tracking-empty">لا يوجد سجل غياب مسجل حتى الآن.</div>'; return; }
+      const labels = { approved: "مقبول", rejected: "مرفوض", pending: "قيد المراجعة" };
+      list.innerHTML = records.map(item => {
+        const d = item.dateKey ? new Date(`${item.dateKey}T00:00:00`) : null;
+        const date = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) : "تاريخ غير محدد";
+        const status = item.status || "pending";
+        return `<article class="absence-history-item"><div><strong>${safe(date)}</strong><small>${safe(item.reason || "بدون توضيح للسبب")}</small></div><span class="absence-status absence-${safe(status)}">${labels[status] || "غير معروف"}</span></article>`;
+      }).join("");
+    } catch (error) {
+      console.error("Member absence history load error:", error);
+      list.innerHTML = '<div class="tracking-empty tracking-error">تعذر تحميل سجل الغياب حاليًا.</div>';
+    }
+  };
+
   window.loadMemberMeasurements = async function (uid) {
     const list = document.getElementById("member-measurements-list");
     if (!list || !uid) return;

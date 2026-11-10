@@ -15,7 +15,7 @@
       <span class="brand-copy"><strong>BLUE AGATE</strong><small>FITNESS FOR WOMEN</small></span>
     </a>
     <div class="top-actions">
-      <span class="staff-label"><i></i> بوابة الاستقبال</span>
+      <span class="staff-label"><i></i> <span id="staff-role-label">بوابة الاستقبال</span></span>
       <button id="logout" class="logout" hidden>تسجيل الخروج</button>
     </div>
   </header>
@@ -24,7 +24,7 @@
     <section id="login-card" class="card login-card">
       <div class="eyebrow">BLUE AGATE · STAFF ACCESS</div>
       <h1>دخول موظفة الاستقبال</h1>
-      <p class="intro">سجّلي الدخول بالحساب المصرّح له لإدارة حضور العضوات.</p>
+      <p class="intro">سجّلي الدخول بالحساب المصرّح له لعرض بيانات المشتركات وتعديل مدة الاشتراك عند الحاجة.</p>
       <div id="login-message" class="message" role="status" hidden></div>
       <form id="login-form">
         <label for="email">البريد الإلكتروني</label>
@@ -38,17 +38,17 @@
     <section id="scanner-card" class="card scanner-card" hidden>
       <div class="section-heading">
         <div>
-          <div class="eyebrow">MEMBERS CHECK-IN</div>
-          <h1>تسجيل حضور العضوات</h1>
-          <p class="intro">وجّهي الكاميرا نحو رمز QR الموجود في بطاقة العضوية.</p>
+          <div class="eyebrow">MEMBER PROFILE LOOKUP</div>
+          <h1>بطاقة بيانات المشتركة</h1>
+          <p class="intro">امسحي رمز QR لعرض بيانات المشتركة وقياساتها. لا يتم تسجيل الحضور أو الغياب من هنا.</p>
         </div>
-        <div class="live-indicator"><i></i> نظام الحضور</div>
+        <div class="live-indicator"><i></i> بطاقة العضوية</div>
       </div>
 
       <div id="scan-message" class="message" role="status" aria-live="polite" hidden></div>
 
       <div class="scanner-panel">
-        <div class="scanner-topline"><span class="camera-icon">⌗</span><span>ماسح بطاقة العضوية</span></div>
+        <div class="scanner-topline"><span class="camera-icon">⌗</span><span>ماسح رمز بطاقة المشتركة</span></div>
         <div class="reader-wrap"><div id="reader"></div><div class="scan-hint">ضعي رمز QR داخل إطار المسح</div></div>
         <div class="scanner-controls">
           <button id="camera-toggle" class="primary-btn" type="button">إيقاف الكاميرا</button>
@@ -61,12 +61,12 @@
         <label for="manual-uid">رمز حساب العضوة (UID)</label>
         <div class="manual-row">
           <input id="manual-uid" autocomplete="off" placeholder="أدخلي رمز الحساب هنا">
-          <button id="manual-submit" class="primary-btn" type="button">تحقّق وسجّلي الحضور</button>
+          <button id="manual-submit" class="primary-btn" type="button">عرض بطاقة المشتركة</button>
         </div>
       </div>
 
       <div id="last-result" class="result-card" aria-live="polite" hidden></div>
-      <div class="security-note"><span>ⓘ</span><p>تأكدي من حضور صاحبة العضوية شخصيًا قبل التسجيل. رمز QR يعرّف الحساب ولا يثبت هوية حاملة الجوال.</p></div>
+      <div class="security-note"><span>ⓘ</span><p>يعرض الرمز بيانات العضوية والقياسات فقط. لا يسجل حضورًا أو غيابًا، ولا يغني عن التحقق من هوية المشتركة قبل تعديل بياناتها.</p></div>
     </section>
     <footer>BLUE AGATE FITNESS FOR WOMEN <span>·</span> بوابة الاستقبال</footer>
   </main>
@@ -76,6 +76,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="reception.js?v=20261107-tracking2"></script>
+  <script src="reception.js?v=20261110-member-card1"></script>
 </body>
 </html>

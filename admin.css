@@ -319,3 +319,40 @@ button, input, select { font: inherit; }
 input[readonly] { background: #f3f7f9; color: #607080; }
 
 .stat-filter{font:inherit;text-align:right;cursor:pointer;color:#10283d;transition:border-color .2s,transform .2s}.stat-filter:hover,.stat-filter.active-filter{border-color:#22b9c2;box-shadow:0 0 0 2px rgba(34,185,194,.10)}.stat-filter:focus-visible{outline:3px solid #22b9c2;outline-offset:2px}
+
+
+/* Attendance / streak controls in the member editor */
+.admin-attendance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid #e5edf1;
+  border-radius: 11px;
+  background: #f8fbfc;
+  color: #08766f;
+  font-size: 12px;
+}
+.attendance-delete-btn {
+  border: 1px solid #f0caca;
+  border-radius: 9px;
+  background: #fff5f5;
+  color: #b42318;
+  padding: 7px 11px;
+  font: inherit;
+  cursor: pointer;
+}
+.attendance-delete-btn:disabled { opacity: .55; cursor: wait; }
+.admin-streak-preview {
+  display: inline-block;
+  margin-inline-start: 10px;
+  color: #08766f;
+  font-weight: 700;
+}
+.attendance-admin-hint {
+  margin: 9px 0 12px;
+  color: #647486;
+  font-size: 12px;
+  line-height: 1.7;
+}

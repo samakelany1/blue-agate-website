@@ -354,9 +354,11 @@
 
         <div class="attendance-box">
           <div>
-            <strong>📅 سجل الحضور</strong>
+            <strong>🔥 التحكم بالستريك وسجل الحضور</strong>
             <span id="editor-attendance-total">0 حضور</span>
+            <span id="editor-attendance-streak" class="admin-streak-preview">الستريك الحالي: —</span>
           </div>
+          <p class="attendance-admin-hint">يمكنك حذف أي تسجيل حضور غير صحيح. يُعاد احتساب الستريك تلقائيًا وفق أيام الحضور المسجلة، مع استثناء يوم الجمعة.</p>
           <div id="editor-attendance-list" class="mini-attendance-list"></div>
         </div>
       </section>
@@ -367,7 +369,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261110-member-filters1"></script>
+  <script src="admin.js?v=20261111-streak-controls1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
   <script src="content-admin.js?v=20261108-1"></script>\n  <script src="admin-enhancements.js?v=20261110-1"></script>

@@ -117,27 +117,30 @@ async function loadAttendance() {
 // ======================================
 
 function calculateStreak(dateKeys) {
-  const uniqueDates = [...new Set(dateKeys)].sort().reverse();
-  if (!uniqueDates.length) return 0;
+  const attended = new Set(dateKeys);
+  if (!attended.size) return 0;
 
-  const todayKey = localDateKey();
-  let current = uniqueDates.includes(todayKey)
-    ? dateFromKey(todayKey)
-    : dateFromKey(uniqueDates[0]);
+  // Friday is the club's weekly day off and does not count as a missed day.
+  let current = dateFromKey(localDateKey());
+  if (current.getUTCDay() === 5) current = previousClubDay(current);
 
   let streak = 0;
+  let consecutiveMisses = 0;
+
   while (true) {
     const key = localDateKey(current);
-    if (uniqueDates.includes(key)) {
+    if (attended.has(key)) {
       streak++;
-    } else if (current.getUTCDay() !== 5) {
-      break;
+      consecutiveMisses = 0;
+    } else {
+      consecutiveMisses++;
+      if (consecutiveMisses >= 2) break;
     }
 
-    const previous = previousClubDay(current);
-    if (previous.getTime() === current.getTime()) break;
-    current = previous;
+    current = previousClubDay(current);
+    if (streak + consecutiveMisses > 500) break;
   }
+
   return streak;
 }
 

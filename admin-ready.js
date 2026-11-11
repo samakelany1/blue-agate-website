@@ -382,16 +382,79 @@ async function renewSubscription(months) {
 async function loadMemberAttendance(uid) {
   const list = document.getElementById("editor-attendance-list");
   const total = document.getElementById("editor-attendance-total");
+  const streakEl = document.getElementById("editor-attendance-streak");
   list.innerHTML = '<div class="mini-empty">جاري التحميل...</div>';
   try {
     const snapshot = await firebase.firestore().collection("members").doc(uid).collection("attendance").orderBy("dateKey", "desc").get();
-    const dates = [];
-    snapshot.forEach(doc => { const data = doc.data(); if (data.dateKey) dates.push(data.dateKey); });
-    total.textContent = `${dates.length} حضور`;
-    list.innerHTML = dates.length ? dates.slice(0, 15).map(key => `<span>${dateKeyToArabic(key)} ✓</span>`).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
+    const records = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(item => item.dateKey)
+      .sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)));
+    const dates = new Set(records.map(item => item.dateKey));
+
+    // Keep the admin preview identical to the member-facing streak rule.
+    const toUtcDate = key => {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(Date.UTC(year, month - 1, day));
+    };
+    const keyOf = date => date.toISOString().slice(0, 10);
+    const previousClubDay = date => {
+      const previous = new Date(date);
+      previous.setUTCDate(previous.getUTCDate() - 1);
+      if (previous.getUTCDay() === 5) previous.setUTCDate(previous.getUTCDate() - 1);
+      return previous;
+    };
+    const nowParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(new Date());
+    const nowValues = Object.fromEntries(nowParts.map(part => [part.type, part.value]));
+    let cursor = toUtcDate(`${nowValues.year}-${nowValues.month}-${nowValues.day}`);
+    if (cursor.getUTCDay() === 5) cursor = previousClubDay(cursor);
+    let streak = 0, misses = 0;
+    while (streak + misses <= 500) {
+      if (dates.has(keyOf(cursor))) {
+        streak++;
+        misses = 0;
+      } else if (++misses >= 2) {
+        break;
+      }
+      cursor = previousClubDay(cursor);
+    }
+
+    total.textContent = `${records.length} حضور`;
+    if (streakEl) streakEl.textContent = `الستريك الحالي: ${streak} يوم`;
+    list.innerHTML = records.length ? records.map(item => `
+      <div class="admin-attendance-row">
+        <span>${dateKeyToArabic(item.dateKey)} ✓</span>
+        <button type="button" class="attendance-delete-btn" data-attendance-date="${item.dateKey}" aria-label="حذف حضور ${item.dateKey}">حذف الحضور</button>
+      </div>
+    `).join("") : '<div class="mini-empty">لا يوجد حضور مسجل.</div>';
+
+    list.querySelectorAll(".attendance-delete-btn").forEach(button => {
+      button.addEventListener("click", () => removeMemberAttendance(uid, button.dataset.attendanceDate, button));
+    });
   } catch (error) {
     console.error(error);
     list.innerHTML = '<div class="mini-empty">تعذر تحميل سجل الحضور.</div>';
+    if (streakEl) streakEl.textContent = "تعذر حساب الستريك";
+  }
+}
+
+async function removeMemberAttendance(uid, dateKey, button) {
+  if (!uid || !dateKey) return;
+  if (!window.confirm(`هل أنتِ متأكدة من حذف تسجيل الحضور بتاريخ ${dateKey}؟ سيُعاد احتساب الستريك بعد الحذف.`)) return;
+  if (button) button.disabled = true;
+  try {
+    await firebase.firestore()
+      .collection("members").doc(uid)
+      .collection("attendance").doc(dateKey)
+      .delete();
+    editorMessage("تم حذف تسجيل الحضور وإعادة احتساب الستريك عند تحديث السجل ✓", "success");
+    await loadMemberAttendance(uid);
+  } catch (error) {
+    console.error("Delete member attendance error:", error);
+    editorMessage("تعذر حذف الحضور. تحققي من صلاحيات Firestore.", "error");
+    if (button) button.disabled = false;
   }
 }
 

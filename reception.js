@@ -19,5 +19,32 @@ async function handleScan(raw){const uid=String(raw||"").trim();if(!uid||uid.len
 $("save-subscription-change").addEventListener("click",()=>saveSubscriptionChange(uid,m));showMessage("scan-message","تم عرض بطاقة المشتركة وقياساتها.","success");$("manual-uid").value="";
 }catch(error){console.error(error);showMessage("scan-message","تعذر تحميل بيانات المشتركة. تحققي من صلاحيات Firestore.","error");}}
 async function saveSubscriptionChange(uid,oldMember){const button=$("save-subscription-change"),message=$("subscription-edit-message");const type=$("reception-membership-type").value.trim(),start=$("reception-start-date").value,end=$("reception-end-date").value;if(!type||!start||!end||end<start){message.textContent="أدخلي نوع الاشتراك وتاريخي بداية ونهاية صحيحين.";message.className="message error";message.hidden=false;return;}button.disabled=true;try{const user=firebase.auth().currentUser;const db=firebase.firestore();const ref=db.collection("members").doc(uid);const update={membershipType:type,startDate:firebase.firestore.Timestamp.fromDate(new Date(`${start}T00:00:00`)),endDate:firebase.firestore.Timestamp.fromDate(new Date(`${end}T23:59:59`)),subscriptionUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),subscriptionUpdatedBy:user.uid};await ref.update(update);await ref.collection("subscriptionAdjustments").add({previousMembershipType:oldMember.membershipType||"",previousStartDate:oldMember.startDate||null,previousEndDate:oldMember.endDate||null,membershipType:type,startDate:update.startDate,endDate:update.endDate,reason:"تعديل من موظفة الاستقبال",createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:user.uid});message.textContent="تم تحديث بيانات الاشتراك بنجاح.";message.className="message success";message.hidden=false;showMessage("scan-message","تم حفظ تعديل الاشتراك.","success");}catch(error){console.error(error);message.textContent="تعذر حفظ التعديل. تحققي من نشر قواعد Firestore وصلاحية حساب الاستقبال.";message.className="message error";message.hidden=false;}finally{button.disabled=false;}}
+$("login-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  const button = $("login-form").querySelector('button[type="submit"]');
+  button.disabled = true;
+  showMessage("login-message", "جارٍ تسجيل الدخول...", "info");
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+    // onAuthStateChanged verifies that this account is authorized for the reception portal.
+  } catch (error) {
+    console.error("Reception login failed:", error);
+    let message = "تعذر تسجيل الدخول. تحققي من البريد الإلكتروني وكلمة المرور.";
+    if (["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"].includes(error.code)) {
+      message = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+    } else if (error.code === "auth/too-many-requests") {
+      message = "تم إيقاف المحاولات مؤقتًا لكثرة المحاولات. حاولي لاحقًا.";
+    } else if (error.code === "auth/network-request-failed") {
+      message = "تعذر الاتصال. تحققي من الإنترنت وحاولي مجددًا.";
+    } else if (error.code === "auth/operation-not-allowed") {
+      message = "تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في Firebase Authentication.";
+    }
+    showMessage("login-message", message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
 $("camera-toggle").addEventListener("click",toggleCamera);$("manual-submit").addEventListener("click",()=>handleScan($("manual-uid").value));$("manual-uid").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();handleScan($("manual-uid").value);}});$("logout").addEventListener("click",()=>firebase.auth().signOut());
 firebase.initializeApp(firebaseConfig);firebase.auth().onAuthStateChanged(async user=>{if(!user){setPanel(false);return;}try{const role=await staffRole(user);if(role){window.blueAgateStaffRole=role;setPanel(true);$("staff-role-label").textContent=role==="admin"?"إدارة النادي":role==="trainer"?"حساب المدربة — عرض القياسات":"موظفة الاستقبال";}else{await firebase.auth().signOut();setPanel(false);showMessage("login-message","هذا الحساب ليس لديه صلاحية الاستقبال. أضيفي له مستند admins/{uid} بدور reception.","error");}}catch(e){console.error(e);setPanel(false);showMessage("login-message","تعذر التحقق من الصلاحيات.","error");}});

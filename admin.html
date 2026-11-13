@@ -352,6 +352,18 @@
           <div class="measurement-admin-list-wrap"><h4>سجل القياسات السابقة</h4><div id="admin-measurements-list" class="measurement-admin-list"><div class="mini-empty">اختاري مشتركة لعرض قياساتها.</div></div></div>
         </section>
 
+        <section class="admin-manual-absence-box">
+          <div class="section-head"><div><p class="eyebrow">MANUAL ABSENCE CONTROL</p><h3>إضافة يوم غياب يدوي</h3><p>سجّلي يوم الغياب من لوحة الإدارة، وسيُخصم تلقائيًا من رصيد 7 أيام لدورة الاشتراك الحالية، مع حفظ التاريخ في سجل المشتركة.</p></div></div>
+          <div id="admin-manual-absence-balance" class="admin-message">اختاري مشتركة لعرض رصيدها.</div>
+          <div id="admin-manual-absence-message" class="admin-message" hidden></div>
+          <form id="admin-manual-absence-form" class="member-form two-column-form">
+            <div><label for="admin-manual-absence-date">تاريخ الغياب</label><input id="admin-manual-absence-date" type="date" required></div>
+            <div><label for="admin-manual-absence-reason">سبب / ملاحظة</label><input id="admin-manual-absence-reason" type="text" maxlength="240" required placeholder="مثال: غياب مسجل من الإدارة"></div>
+            <div class="full-width"><button class="primary-btn" type="submit">إضافة يوم الغياب وخصمه من الرصيد</button></div>
+          </form>
+          <div class="measurement-admin-list-wrap"><h4>سجل أيام الغياب المضافة من الإدارة</h4><div id="admin-manual-absence-list" class="mini-attendance-list"><div class="mini-empty">اختاري مشتركة لعرض السجل.</div></div></div>
+        </section>
+
         <div class="attendance-box">
           <div>
             <strong>🔥 التحكم بالستريك وسجل الحضور</strong>
@@ -369,7 +381,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261111-streak-controls1"></script>
+  <script src="admin.js?v=20261114-subscription-absence-cycle1"></script>
+  <script src="admin-absence-days.js?v=20261114-1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="renewal-requests-admin.js"></script>
   <script src="content-admin.js?v=20261108-1"></script>\n  <script src="admin-enhancements.js?v=20261110-1"></script>

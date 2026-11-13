@@ -25,15 +25,23 @@
     if (!list || !uid) return;
     list.innerHTML = '<div class="tracking-empty">جاري تحميل سجل الغياب...</div>';
     try {
-      const snap = await firebase.firestore().collection("members").doc(uid).collection("absenceRequests").orderBy("dateKey", "desc").get();
-      const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const memberRef = firebase.firestore().collection("members").doc(uid);
+      const [requestSnap, manualSnap] = await Promise.all([
+        memberRef.collection("absenceRequests").orderBy("dateKey", "desc").get(),
+        memberRef.collection("subscriptionAdjustments").where("type", "==", "manual-absence").get()
+      ]);
+      const records = [
+        ...requestSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), source: "request" })),
+        ...manualSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), source: "manual" }))
+      ].sort((a, b) => String(b.dateKey || "").localeCompare(String(a.dateKey || "")));
       if (!records.length) { list.innerHTML = '<div class="tracking-empty">لا يوجد سجل غياب مسجل حتى الآن.</div>'; return; }
       const labels = { approved: "مقبول", rejected: "مرفوض", pending: "قيد المراجعة" };
       list.innerHTML = records.map(item => {
         const d = item.dateKey ? new Date(`${item.dateKey}T00:00:00`) : null;
         const date = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) : "تاريخ غير محدد";
-        const status = item.status || "pending";
-        return `<article class="absence-history-item"><div><strong>${safe(date)}</strong><small>${safe(item.reason || "بدون توضيح للسبب")}</small></div><span class="absence-status absence-${safe(status)}">${labels[status] || "غير معروف"}</span></article>`;
+        const status = item.source === "manual" ? "manual" : (item.status || "pending");
+        const label = item.source === "manual" ? "مسجل من الإدارة" : (labels[status] || "غير معروف");
+        return `<article class="absence-history-item"><div><strong>${safe(date)}</strong><small>${safe(item.reason || (item.source === "manual" ? "غياب أضافته الإدارة" : "بدون توضيح للسبب"))}</small></div><span class="absence-status absence-${safe(status)}">${label}</span></article>`;
       }).join("");
     } catch (error) {
       console.error("Member absence history load error:", error);

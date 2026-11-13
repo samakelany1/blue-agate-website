@@ -155,6 +155,7 @@ function renderAttendance(dateKeys, member = {}) {
   const todayStatus = document.getElementById("attendance-today-status");
   const todayKey = localDateKey();
   const hasToday = dateKeys.includes(todayKey);
+  const dayExcluded = Array.isArray(member.excludedAbsenceDates) && member.excludedAbsenceDates.includes(todayKey);
   const streak = calculateStreak(dateKeys);
   const status = membershipStatus(member, todayKey);
 
@@ -167,6 +168,9 @@ function renderAttendance(dateKeys, member = {}) {
       todayStatus.className = "attendance-status done";
     } else if (status === "expired") {
       todayStatus.textContent = "انتهى اشتراكك. راجعي الإدارة للتجديد.";
+      todayStatus.className = "attendance-status";
+    } else if (dayExcluded) {
+      todayStatus.textContent = "تم تسجيل استثناء لهذا اليوم من الإدارة.";
       todayStatus.className = "attendance-status";
     } else if (status === "not-started") {
       todayStatus.textContent = "لم يبدأ اشتراكك بعد.";
@@ -182,9 +186,10 @@ function renderAttendance(dateKeys, member = {}) {
 
   const button = document.getElementById("attendance-btn");
   if (button) {
-    button.disabled = hasToday || status !== "active" || isFriday(todayKey);
+    button.disabled = hasToday || dayExcluded || status !== "active" || isFriday(todayKey);
 
     if (hasToday) button.textContent = "تم تسجيل حضور اليوم ✓";
+    else if (dayExcluded) button.textContent = "اليوم مسجل كغياب / استثناء";
     else if (status === "expired") button.textContent = "انتهى الاشتراك";
     else if (status === "not-started") button.textContent = "لم يبدأ الاشتراك";
     else if (status !== "active") button.textContent = "راجعي الإدارة";
@@ -249,6 +254,7 @@ async function registerAttendance() {
 
       const member = memberSnapshot.data();
       const status = membershipStatus(member, todayKey);
+      if (Array.isArray(member.excludedAbsenceDates) && member.excludedAbsenceDates.includes(todayKey)) throw new Error("DAY_MARKED_ABSENT");
       if (status === "inactive") throw new Error("MEMBERSHIP_INACTIVE");
       if (status === "expired") throw new Error("MEMBERSHIP_EXPIRED");
       if (status === "not-started") throw new Error("MEMBERSHIP_NOT_STARTED");
@@ -279,6 +285,7 @@ async function registerAttendance() {
 
     const messages = {
       ALREADY_ATTENDED: ["تم تسجيل حضورك اليوم بالفعل ✓", "success"],
+      DAY_MARKED_ABSENT: ["هذا اليوم مسجل كغياب أو استثناء من الإدارة، ولا يمكن تسجيل حضور متزامن.", "error"],
       MEMBERSHIP_INACTIVE: ["اشتراكك غير نشط حاليًا. راجعي الإدارة.", "error"],
       MEMBERSHIP_EXPIRED: ["انتهى اشتراكك. راجعي الإدارة للتجديد.", "error"],
       MEMBERSHIP_NOT_STARTED: ["لم يبدأ اشتراكك بعد. راجعي الإدارة إذا كان هذا غير صحيح.", "error"],

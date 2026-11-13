@@ -10,7 +10,7 @@
   const host=$('subscription-adjustment-notices'); if(!host)return;
   try{
     const snap=await firebase.firestore().collection('members').doc(uid).collection('subscriptionAdjustments').limit(20).get();
-    const rows=snap.docs.map(d=>d.data()).filter(x=>x.visibleToMember!==false).sort((a,b)=>{
+    const rows=snap.docs.map(d=>d.data()).filter(x=>x.visibleToMember!==false && x.type!=='manual-absence').sort((a,b)=>{
       const ad=date(a.createdAt),bd=date(b.createdAt);return (bd?bd.getTime():0)-(ad?ad.getTime():0);
     }).slice(0,5);
     if(!rows.length){host.hidden=true;host.innerHTML='';return;}

@@ -54,6 +54,25 @@ function dateKeyForTimestamp(value) {
   return date ? keyForDate(date) : null;
 }
 
+// Subscription-month boundaries follow the activation date (e.g. 12th to 11th),
+// not Gregorian calendar-month boundaries (1st to month-end).
+function addMonthsToKey(key, count) {
+  const [year, month, day] = key.split('-').map(Number);
+  const first = new Date(Date.UTC(year, month - 1 + count, 1));
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  first.setUTCDate(Math.min(day, lastDay));
+  return `${first.getUTCFullYear()}-${String(first.getUTCMonth() + 1).padStart(2, '0')}-${String(first.getUTCDate()).padStart(2, '0')}`;
+}
+
+function subscriptionCycleStartKey(startKey, targetKey) {
+  if (!startKey || !targetKey || targetKey < startKey) return null;
+  const [sy, sm] = startKey.split('-').map(Number);
+  const [ty, tm] = targetKey.split('-').map(Number);
+  let months = (ty - sy) * 12 + (tm - sm);
+  if (addMonthsToKey(startKey, months) > targetKey) months--;
+  return addMonthsToKey(startKey, Math.max(0, months));
+}
+
 // Firestore endDate is stored as the end of the day in Saudi Arabia (UTC+3).
 function timestampAtKsaEndOfDay(key) {
   return admin.firestore.Timestamp.fromDate(
@@ -134,6 +153,9 @@ async function processDailyAbsences() {
 
         let attendanceRemaining = numericBalance(member.attendanceDaysRemaining, 30);
         let graceRemaining = numericBalance(member.graceAbsenceDaysRemaining, 7);
+        let graceCycleStartKey = typeof member.graceAbsenceCycleStartDate === 'string'
+          ? member.graceAbsenceCycleStartDate
+          : (subscriptionCycleStartKey(startKey, last) || startKey);
         let cursor = addDays(last, 1);
         const dates = [];
         while (cursor <= yesterdayKey && dates.length < MAX_DATES_PER_RUN) {
@@ -159,6 +181,11 @@ async function processDailyAbsences() {
           const key = dates[i];
           if (key < startKey) { lastProcessed = key; processed++; continue; }
           if (key > endKey) break;
+          const dateCycleStart = subscriptionCycleStartKey(startKey, key);
+          if (dateCycleStart && dateCycleStart !== graceCycleStartKey) {
+            graceRemaining = 7;
+            graceCycleStartKey = dateCycleStart;
+          }
           const calendar = calendarSnaps[i].exists ? calendarSnaps[i].data() : {};
           const attended = attendanceSnaps[i].exists;
           const dateRequests = absenceRequestsByDate.get(key) || [];
@@ -206,8 +233,13 @@ async function processDailyAbsences() {
           }
 
           if (approvedLeave) {
-            // Approved absence uses grace allowance only, never the 30-day attendance balance.
-            if (!approvedLeaveAlreadyApplied && graceRemaining > 0) graceRemaining--;
+            // Approved absence consumes this subscription month's 7-day allowance first.
+            if (!approvedLeaveAlreadyApplied && graceRemaining > 0) {
+              graceRemaining--;
+            } else if (!approvedLeaveAlreadyApplied && graceRemaining <= 0) {
+              attendanceRemaining = Math.max(0, attendanceRemaining - 1);
+              ordinaryMembershipDays++;
+            }
             approvedLeaveDays++;
           } else if (graceRemaining > 0) {
             graceRemaining--;
@@ -224,6 +256,7 @@ async function processDailyAbsences() {
         const update = {
           attendanceDaysRemaining: attendanceRemaining,
           graceAbsenceDaysRemaining: graceRemaining,
+          graceAbsenceCycleStartDate: graceCycleStartKey,
           absenceAllowanceDays: 7,
           absenceAllowanceDaysRemaining: graceRemaining,
           graceAbsenceDaysConsumed: Math.max(0, 7 - graceRemaining),

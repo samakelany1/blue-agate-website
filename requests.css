@@ -82,3 +82,5 @@
 .renewal-result-details{display:grid;gap:7px;margin-top:10px;padding:13px 15px;background:#f1f7f4;border-radius:12px;color:#4d6d5c;font-size:.85rem}
 .renewal-result-details strong{color:#16764d}
 @media(max-width:640px){.admin-requests-card .section-head,.admin-renewal-requests-card .section-head{align-items:stretch;flex-direction:column}.renewal-request-meta{grid-template-columns:1fr}.admin-request-top{flex-direction:column;align-items:flex-start}}
+
+.absence-cycle-counter{margin:12px 0;padding:12px 14px;border-radius:12px;background:#eff8f9;color:#31546a;font-size:13px;line-height:1.7}

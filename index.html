@@ -196,13 +196,14 @@
           <div class="requests-grid">
             <form id="absence-request-form" class="request-card">
               <h3>طلب غياب</h3>
-              <p>أبلغي النادي عن يوم الغياب. يُحتسب الغياب من رصيدك وفق سياسة الاشتراك حتى مع وجود إشعار.</p>
+              <p>يُتاح لكِ طلب غياب بحد أقصى 7 أيام خلال كل شهر من اشتراكك، ويبدأ الشهر من تاريخ تفعيل اشتراكك.</p>
               <label for="absence-date">تاريخ الغياب</label>
               <input id="absence-date" type="date" required>
               <label for="absence-reason">سبب الغياب</label>
               <textarea id="absence-reason" rows="3" maxlength="500" required placeholder="اكتبي سبب الغياب"></textarea>
+              <div id="absence-cycle-counter" class="absence-cycle-counter">يتم احتساب الأيام حسب دورة اشتراكك.</div>
               <div id="absence-request-message" class="request-message" hidden></div>
-              <button class="request-submit" type="submit">إرسال طلب الغياب</button>
+              <button id="absence-submit-btn" class="request-submit" type="submit">إرسال طلب الغياب</button>
             </form>
           </div>
 
@@ -335,10 +336,10 @@
   <script src="attendance.js?v=20261111-streak-reset1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="profile.js?v=20261110-member-card1"></script>
-  <script src="member-tracking.js?v=20261110-absence-history1"></script>
+  <script src="member-tracking.js?v=20261114-manual-absence-history1"></script>
   <script src="subscription-countdown.js?v=20261110-adjustments"></script>
   <script src="app-layout.js"></script>
-  <script src="requests-member.js"></script>
+  <script src="requests-member.js?v=20261114-subscription-cycle1"></script>
   <script src="requests-navigation.js"></script>
 </body>
 </html>

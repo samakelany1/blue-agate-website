@@ -16,6 +16,28 @@
   function statusLabel(status) {
     return ({ pending: "قيد المراجعة", approved: "مقبول", rejected: "مرفوض" })[status] || "غير معروف";
   }
+  function ksaDateKey(value) {
+    if (!value) return null;
+    const date = typeof value.toDate === "function" ? value.toDate() : new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(p => [p.type, p.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+  function addMonthsToKey(key, count) {
+    const [year, month, day] = key.split("-").map(Number);
+    const first = new Date(Date.UTC(year, month - 1 + count, 1));
+    const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+    first.setUTCDate(Math.min(day, lastDay));
+    return `${first.getUTCFullYear()}-${String(first.getUTCMonth() + 1).padStart(2, "0")}-${String(first.getUTCDate()).padStart(2, "0")}`;
+  }
+  function cycleStartForDate(startKey, targetKey) {
+    if (!startKey || !targetKey || targetKey < startKey) return null;
+    const [sy, sm] = startKey.split("-").map(Number), [ty, tm] = targetKey.split("-").map(Number);
+    let months = (ty - sy) * 12 + (tm - sm);
+    if (addMonthsToKey(startKey, months) > targetKey) months--;
+    return addMonthsToKey(startKey, Math.max(0, months));
+  }
   function showMessage(message, type = "info") {
     const box = el("admin-requests-message");
     if (!box) return;
@@ -135,9 +157,23 @@
           if (requestData.dateKey === todayKey) {
             const attendanceSnap = await tx.get(memberRef.collection("attendance").doc(todayKey));
             if (attendanceSnap.exists) throw new Error("MEMBER_ALREADY_ATTENDED");
-            const grace = Number.isFinite(member.graceAbsenceDaysRemaining) ? Math.max(0, member.graceAbsenceDaysRemaining) : 7;
-            if (grace > 0) tx.update(memberRef, { graceAbsenceDaysRemaining: grace - 1 });
-            update.balanceApplied = true;
+            const startKey = ksaDateKey(member.startDate);
+            const cycleStart = cycleStartForDate(startKey, requestData.dateKey);
+            const balanceCycleStart = typeof member.graceAbsenceCycleStartDate === "string"
+              ? member.graceAbsenceCycleStartDate
+              : (cycleStartForDate(startKey, member.attendanceLastProcessedDate || startKey) || startKey);
+            const storedGrace = Number.isFinite(member.graceAbsenceDaysRemaining) ? Math.max(0, Math.min(7, member.graceAbsenceDaysRemaining)) : 7;
+            const grace = balanceCycleStart === cycleStart ? storedGrace : 7;
+            if (grace > 0) {
+              tx.update(memberRef, {
+                graceAbsenceCycleStartDate: cycleStart,
+                graceAbsenceDaysRemaining: grace - 1,
+                graceAbsenceDaysConsumed: 7 - (grace - 1),
+                absenceAllowanceDays: 7,
+                absenceAllowanceDaysRemaining: grace - 1
+              });
+              update.balanceApplied = true;
+            }
           }
         }
         tx.update(request.ref, update);

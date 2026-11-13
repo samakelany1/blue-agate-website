@@ -8,3 +8,5 @@
 @media(max-width:650px){.measurement-values{grid-template-columns:repeat(2,minmax(0,1fr))}.tracking-stats strong{font-size:27px}.measurement-admin-item{align-items:flex-start}.admin-measurements-box{padding:15px}}
 
 .absence-history-title{margin:24px 0 12px;color:#10283d;font-size:17px}.absence-history-list{display:grid;gap:9px}.absence-history-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border:1px solid #e3edf0;border-radius:13px;background:#fff}.absence-history-item>div{display:grid;gap:5px}.absence-history-item strong{color:#10283d;font-size:13px}.absence-history-item small{color:#71858b;font-size:12px}.absence-status{padding:6px 10px;border-radius:30px;font-size:11px;font-weight:800;white-space:nowrap}.absence-approved{background:#e8f7f0;color:#176d4e}.absence-rejected{background:#fff0f0;color:#a33}.absence-pending{background:#fff7e5;color:#8b6200}
+
+.absence-status.absence-manual{background:#e8f8f4;color:#087f72}

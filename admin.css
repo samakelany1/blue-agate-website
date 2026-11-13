@@ -356,3 +356,13 @@ input[readonly] { background: #f3f7f9; color: #607080; }
   font-size: 12px;
   line-height: 1.7;
 }
+
+/* Manual absence balance controls */
+.admin-manual-absence-box{margin:22px 0;padding:20px;border:1px solid rgba(34,185,194,.28);border-radius:18px;background:#f8fcfd}
+.admin-manual-absence-box .section-head{margin-bottom:14px}
+#admin-manual-absence-balance{display:block;margin:12px 0;padding:13px 16px;background:#eef8f9;border-radius:12px;color:#10283d;font-weight:700}
+.manual-absence-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:8px 0;border:1px solid rgba(16,40,61,.09);border-radius:12px;background:#fff}
+.manual-absence-row strong,.manual-absence-row small{display:block}
+.manual-absence-row small{margin-top:5px;color:#647486}
+.manual-absence-row>span{color:#0b8791;font-size:12px;white-space:nowrap;font-weight:700}
+.absence-cycle-counter{margin:12px 0;padding:12px 14px;border-radius:12px;background:#eff8f9;color:#31546a;font-size:13px;line-height:1.7}

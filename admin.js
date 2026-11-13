@@ -218,6 +218,7 @@ async function openMemberEditor(uid) {
   editorMessage("", "info");
   document.getElementById("editor-message").hidden = true;
   await Promise.all([loadMemberAttendance(uid), loadAdminMeasurements(uid)]);
+  document.dispatchEvent(new CustomEvent("blueagate:member-editor-opened", { detail: { uid } }));
   document.getElementById("measurement-date").value = todayInputDate();
   document.getElementById("member-editor").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -339,7 +340,7 @@ async function applySubscriptionCycle(mode) {
     return;
   }
   const actionLabel = isActivation ? "تفعيل" : "تجديد";
-  const confirmed = window.confirm(`${actionLabel} اشتراك ${member.name || "العضوة"}؟\n\nالبداية: ${startString}\nالنهاية: ${endString}\nرصيد الحضور: 30 يومًا\nأيام السماح: 7 أيام`);
+  const confirmed = window.confirm(`${actionLabel} اشتراك ${member.name || "العضوة"}؟\n\nالبداية: ${startString}\nالنهاية: ${endString}\nرصيد الحضور: 30 يومًا\nأيام السماح: 7 أيام لكل شهر اشتراك`);
   if (!confirmed) return;
   const buttons = [document.getElementById("activate-subscription-btn"), document.getElementById("renew-subscription-btn")].filter(Boolean);
   buttons.forEach(btn => btn.disabled = true);
@@ -359,6 +360,7 @@ async function applySubscriptionCycle(mode) {
       attendanceDaysRemaining: 30,
       graceAbsenceDaysInitial: 7,
       graceAbsenceDaysRemaining: 7,
+      graceAbsenceCycleStartDate: startString,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: firebase.auth().currentUser.uid
     };
@@ -371,9 +373,11 @@ async function applySubscriptionCycle(mode) {
       attendancePlanStartedAt: cycleData.startDate,
       attendanceDaysRemaining: 30,
       graceAbsenceDaysRemaining: 7,
+      graceAbsenceCycleStartDate: startString,
       graceAbsenceDaysConsumed: 0,
       absenceAllowanceDays: 7,
       absenceAllowanceDaysRemaining: 7,
+      absenceAllowanceTotalDays: months * 7,
       attendanceLastProcessedDate: previousDateKey(startString),
       attendancePlanVersion: 2,
       active: true,

@@ -318,6 +318,58 @@ async function clubRulesPage(){
   try{const snap=await firebase.firestore().collection('clubRules').get();const items=snap.docs.map(d=>d.data()).filter(x=>x.active!==false);box.innerHTML=items.length?items.map(x=>`<article class="announcement-card"><h3>${escapeContent(x.title||'')}</h3><p>${escapeContent(x.body||'').replace(/\n/g,'<br>')}</p></article>`).join(''):'<div class="placeholder">سيتم نشر تعليمات النادي هنا قريبًا.</div>';}catch(e){console.error(e);box.innerHTML='<div class="placeholder">تعذر تحميل التعليمات.</div>';}
 }
 
+
+async function contactPage() {
+  show(`
+    <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
+    <h2>تواصل معنا</h2>
+    <div class="placeholder">جارٍ تحميل بيانات التواصل...</div>
+  `);
+
+  const link = (label, value, href, icon) => {
+    if (!value) return "";
+    const safeLabel = escapeContent(label);
+    const safeValue = escapeContent(value);
+    const safeHref = escapeContent(href);
+    return `<a class="contact-detail-link" href="${safeHref}" target="_blank" rel="noopener noreferrer">
+      <span class="contact-detail-icon">${icon}</span>
+      <span class="contact-detail-copy"><strong>${safeLabel}</strong><span>${safeValue}</span></span>
+      <span class="contact-detail-arrow">←</span>
+    </a>`;
+  };
+
+  try {
+    const snap = await firebase.firestore().collection("clubSettings").doc("contact").get();
+    const data = snap.exists ? snap.data() : {};
+    const items = [
+      link("رقم الجوال", data.phone, `tel:${String(data.phone || "").replace(/[^+\d]/g, "")}`, "📱"),
+      link("واتساب", data.whatsapp, data.whatsapp, "💬"),
+      link("البريد الإلكتروني", data.email, `mailto:${data.email || ""}`, "✉️"),
+      link("إنستغرام", data.instagram, data.instagram, "📷"),
+      link("سناب شات", data.snapchat, data.snapchat, "👻"),
+      link("الموقع / العنوان", data.location,
+        /^https?:\/\//i.test(data.location || "") ? data.location : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.location || "")}`,
+        "📍")
+    ].filter(Boolean);
+
+    show(`
+      <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
+      <h2>تواصل معنا</h2>
+      <p class="hero-text">يسعدنا تواصلكِ معنا. اختاري وسيلة التواصل المناسبة.</p>
+      ${items.length
+        ? `<div class="contact-details-grid">${items.join("")}</div>`
+        : `<div class="placeholder">لم تُضف بيانات التواصل بعد. يرجى المحاولة لاحقًا.</div>`}
+    `);
+  } catch (error) {
+    console.error("Could not load club contact information:", error);
+    show(`
+      <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
+      <h2>تواصل معنا</h2>
+      <div class="placeholder">تعذر تحميل بيانات التواصل حاليًا. يرجى المحاولة مرة أخرى.</div>
+    `);
+  }
+}
+
 function placeholderPage(title, text) {
   show(`
     <button class="back-btn" onclick="backHome()">← العودة للرئيسية</button>
@@ -344,7 +396,7 @@ document.querySelectorAll(".menu-card").forEach(card => {
     }
 
     if (page === "contact") {
-      placeholderPage("تواصل معنا", "هنا سنضيف رقم التواصل، الموقع، وحسابات النادي.");
+      contactPage();
     }
   });
 });

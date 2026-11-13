@@ -335,3 +335,15 @@ footer span { font-size: 9px; letter-spacing: 1.2px; }
 .contact-links-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:20px}
 .contact-link{display:block;padding:17px 20px;border:1px solid rgba(16,40,61,.1);border-radius:16px;background:#fff;color:#123b5a;text-decoration:none;font-weight:700;box-shadow:0 6px 20px rgba(15,35,55,.05)}
 .contact-link:hover{border-color:#22b9c2;background:#f0fbfb}
+
+
+/* Member contact page */
+.contact-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0}
+.contact-detail-link{display:flex;align-items:center;gap:12px;min-width:0;padding:17px 18px;border:1px solid rgba(16,40,61,.10);border-radius:16px;background:#f5fafb;color:#10283d;text-decoration:none;transition:transform .18s ease,border-color .18s ease}
+.contact-detail-link:hover{transform:translateY(-2px);border-color:#22b9c2}
+.contact-detail-icon{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:13px;background:#e4f7f8;font-size:20px}
+.contact-detail-copy{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;text-align:right}
+.contact-detail-copy strong{font-size:14px;color:#10283d}
+.contact-detail-copy span{font-size:13px;color:#647486;overflow-wrap:anywhere}
+.contact-detail-arrow{color:#159da8}
+@media(max-width:640px){.contact-details-grid{grid-template-columns:1fr}.contact-detail-link{padding:14px}}

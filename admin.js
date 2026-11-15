@@ -212,9 +212,7 @@ async function openMemberEditor(uid) {
   document.getElementById("edit-start").value = firestoreDateToInput(member.startDate);
   document.getElementById("edit-end").value = firestoreDateToInput(member.endDate);
   document.getElementById("activation-start-date").value = todayInputDate();
-  document.getElementById("renewal-start-date").value = todayInputDate();
   document.getElementById("activation-duration").value = member.membershipType || "شهر";
-  document.getElementById("renewal-duration").value = member.membershipType || "شهر";
   editorMessage("", "info");
   document.getElementById("editor-message").hidden = true;
   await Promise.all([loadMemberAttendance(uid), loadAdminMeasurements(uid)]);
@@ -241,7 +239,7 @@ async function saveMember(event) {
       phone: document.getElementById("edit-phone").value.trim()
     };
     await firebase.firestore().collection("members").doc(currentEditingUid).set(data, { merge: true });
-    editorMessage("تم حفظ بيانات العضوة. تواريخ الاشتراك وأرصدتهما تُدار من زري التفعيل والتجديد.", "success");
+    editorMessage("تم حفظ بيانات العضوة بنجاح.", "success");
     await loadMembers();
   } catch (error) {
     console.error(error);
@@ -326,24 +324,22 @@ async function createMemberAccount(event) {
   }
 }
 
-async function applySubscriptionCycle(mode) {
+async function applySubscriptionCycle() {
   if (!currentEditingUid) return;
   const member = allMembers.find(m => m.uid === currentEditingUid);
   if (!member) return;
-  const isActivation = mode === "activation";
-  const startString = document.getElementById(isActivation ? "activation-start-date" : "renewal-start-date").value;
-  const label = document.getElementById(isActivation ? "activation-duration" : "renewal-duration").value;
+  const startString = document.getElementById("activation-start-date").value;
+  const label = document.getElementById("activation-duration").value;
   const months = subscriptionMonths(label);
   const endString = calculateEndDate(startString, label);
   if (!startString || !endString || !months) {
     editorMessage("حددي تاريخ البداية ومدة اشتراك صحيحة.", "error");
     return;
   }
-  const actionLabel = isActivation ? "تفعيل" : "تجديد";
-  const confirmed = window.confirm(`${actionLabel} اشتراك ${member.name || "العضوة"}؟\n\nالبداية: ${startString}\nالنهاية: ${endString}\nرصيد الحضور: 30 يومًا\nأيام السماح: 7 أيام لكل شهر اشتراك`);
+  const confirmed = window.confirm(`تفعيل اشتراك ${member.name || "العضوة"}؟\n\nالبداية: ${startString}\nالنهاية: ${endString}\nرصيد الحضور: 30 يومًا\nأيام السماح: 7 أيام لكل شهر اشتراك`);
   if (!confirmed) return;
-  const buttons = [document.getElementById("activate-subscription-btn"), document.getElementById("renew-subscription-btn")].filter(Boolean);
-  buttons.forEach(btn => btn.disabled = true);
+  const button = document.getElementById("activate-subscription-btn");
+  button.disabled = true;
   try {
     const db = firebase.firestore();
     const memberRef = db.collection("members").doc(currentEditingUid);
@@ -351,7 +347,7 @@ async function applySubscriptionCycle(mode) {
     const cycleData = {
       uid: currentEditingUid,
       memberName: member.name || "",
-      type: mode,
+      type: "activation",
       membershipType: label,
       subscriptionMonths: months,
       startDate: localDateToTimestamp(startString),
@@ -383,18 +379,53 @@ async function applySubscriptionCycle(mode) {
       active: true,
       membershipActive: true,
       lastActivatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      ...(isActivation ? { lastActivatedBy: firebase.auth().currentUser.uid } : { lastRenewedAt: firebase.firestore.FieldValue.serverTimestamp(), lastRenewedBy: firebase.auth().currentUser.uid })
+      lastActivatedBy: firebase.auth().currentUser.uid
     }, { merge: true });
     batch.set(db.collection("subscriptionRecords").doc(cycleId), cycleData);
     await batch.commit();
-    editorMessage(`تم ${actionLabel} الاشتراك بنجاح ✓ من ${startString} إلى ${endString}. بدأ رصيد جديد: 30 يوم حضور و7 أيام سماح.`, "success");
+    editorMessage(`تم تفعيل الاشتراك بنجاح ✓ من ${startString} إلى ${endString}. بدأ رصيد جديد: 30 يوم حضور و7 أيام سماح.`, "success");
     await loadMembers();
     await loadMemberAttendance(currentEditingUid);
+    document.getElementById("edit-start").value = startString;
+    document.getElementById("edit-end").value = endString;
   } catch (error) {
     console.error(error);
-    editorMessage(`تعذر ${actionLabel} الاشتراك. تحققي من صلاحيات Firestore.`, "error");
+    editorMessage("تعذر تفعيل الاشتراك. تحققي من صلاحيات Firestore.", "error");
   } finally {
-    buttons.forEach(btn => btn.disabled = false);
+    button.disabled = false;
+  }
+}
+
+async function saveSubscriptionDates() {
+  if (!currentEditingUid) return;
+  const startString = document.getElementById("edit-start").value;
+  const endString = document.getElementById("edit-end").value;
+  if (!startString || !endString) {
+    editorMessage("أدخلي تاريخ بداية ونهاية الاشتراك.", "error");
+    return;
+  }
+  if (endString < startString) {
+    editorMessage("تاريخ نهاية الاشتراك لا يمكن أن يسبق تاريخ البداية.", "error");
+    return;
+  }
+  const button = document.getElementById("save-subscription-dates");
+  button.disabled = true;
+  try {
+    const today = todayInputDate();
+    const isWithinDates = today >= startString && today <= endString;
+    await firebase.firestore().collection("members").doc(currentEditingUid).set({
+      startDate: localDateToTimestamp(startString),
+      endDate: localDateToTimestamp(endString, true),
+      active: isWithinDates,
+      membershipActive: isWithinDates
+    }, { merge: true });
+    editorMessage("تم تحديث تاريخ بداية ونهاية الاشتراك. لم يتم تغيير أرصدة الحضور أو الغياب أو سجل الحضور والقياسات.", "success");
+    await loadMembers();
+  } catch (error) {
+    console.error(error);
+    editorMessage("تعذر تحديث التواريخ. تحققي من صلاحيات Firestore.", "error");
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -845,8 +876,8 @@ async function initAdmin() {
   document.getElementById("add-trainer-form").addEventListener("submit", createTrainerAccount);
   document.getElementById("close-add-member").addEventListener("click", () => { document.getElementById("add-member").hidden = true; });
   document.getElementById("add-member-form").addEventListener("submit", createMemberAccount);
-  document.getElementById("activate-subscription-btn").addEventListener("click", () => applySubscriptionCycle("activation"));
-  document.getElementById("renew-subscription-btn").addEventListener("click", () => applySubscriptionCycle("renewal"));
+  document.getElementById("activate-subscription-btn").addEventListener("click", applySubscriptionCycle);
+  document.getElementById("save-subscription-dates").addEventListener("click", saveSubscriptionDates);
   document.getElementById("closure-form").addEventListener("submit", saveClubClosure);
   document.getElementById("closure-start").min = todayInputDate();
   document.getElementById("closure-end").min = todayInputDate();

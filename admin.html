@@ -85,12 +85,7 @@
         </div>
       </section>
 
-      <section class="admin-card admin-renewal-requests-card">
-        <div class="section-head"><div><p class="eyebrow">SUBSCRIPTION RENEWALS</p><h2>طلبات تجديد الاشتراك</h2><p>راجعي الطلب، افتحي ملف العضوة لتنفيذ التجديد المعتاد، ثم سجّلي النتيجة الفعلية هنا.</p></div><button id="refresh-renewal-requests" class="secondary-btn dark-btn" type="button">تحديث الطلبات</button></div>
-        <div class="request-filter-row"><button class="admin-renewal-filter active" data-renewal-filter="pending" type="button">قيد المتابعة</button><button class="admin-renewal-filter" data-renewal-filter="all" type="button">كل الطلبات</button></div>
-        <div id="admin-renewal-requests-message" class="admin-message" hidden></div>
-        <div id="admin-renewal-requests-list" class="admin-requests-list"><div class="empty-state">جاري تحميل طلبات التجديد...</div></div>
-      </section>
+
 
       <section class="admin-card maintenance-card">
         <div class="section-head"><div><p class="eyebrow">CLUB CLOSURES & COMPENSATION</p><h2>إدارة الصيانة والإغلاقات</h2><p>أضيفي أيام الإغلاق؛ يمدد النظام نهاية الاشتراك يومًا عن كل يوم إغلاق مؤهل، دون تغيير رصيد الحضور أو السماح.</p></div></div>
@@ -295,11 +290,12 @@
               <option value="4 شهور">4 شهور</option>
           </select>
 
-          <label for="edit-start">بداية الاشتراك (تُحدّث من زر التفعيل أو التجديد)</label>
-          <input id="edit-start" type="date" readonly>
+          <label for="edit-start">تاريخ بداية الاشتراك</label>
+          <input id="edit-start" type="date">
 
-          <label for="edit-end">نهاية الاشتراك (تُحسب تلقائيًا)</label>
-          <input id="edit-end" type="date" readonly>
+          <label for="edit-end">تاريخ نهاية الاشتراك</label>
+          <input id="edit-end" type="date">
+          <button id="save-subscription-dates" class="secondary-btn dark-btn" type="button">حفظ تواريخ الاشتراك</button>
 
           <button class="primary-btn" type="submit">حفظ بيانات العضوة</button>
         </form>
@@ -310,15 +306,6 @@
             <div><label for="activation-start-date">تاريخ التفعيل</label><input id="activation-start-date" type="date"></div>
             <div><label for="activation-duration">مدة الاشتراك</label><select id="activation-duration"><option value="شهر">شهر</option><option value="شهرين">شهرين</option><option value="3 شهور">3 شهور</option><option value="4 شهور">4 شهور</option></select></div>
             <div class="full-width"><button id="activate-subscription-btn" class="renew-btn" type="button">تفعيل وبدء دورة الاشتراك</button></div>
-          </div>
-        </div>
-
-        <div class="renewal-box subscription-actions-box">
-          <div><strong>🔄 تجديد الاشتراك</strong><span>حددي تاريخ بداية التجديد بنفسك؛ لا يشترط أن يكون اليوم التالي لنهاية الاشتراك السابق.</span></div>
-          <div class="member-form two-column-form">
-            <div><label for="renewal-start-date">تاريخ بداية التجديد</label><input id="renewal-start-date" type="date"></div>
-            <div><label for="renewal-duration">مدة التجديد</label><select id="renewal-duration"><option value="شهر">شهر</option><option value="شهرين">شهرين</option><option value="3 شهور">3 شهور</option><option value="4 شهور">4 شهور</option></select></div>
-            <div class="full-width"><button id="renew-subscription-btn" class="renew-btn" type="button">تأكيد تجديد الاشتراك</button></div>
           </div>
         </div>
 
@@ -381,10 +368,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="admin.js?v=20261114-subscription-absence-cycle1"></script>
+  <script src="admin.js?v=20261115-subscription-dates-no-renewal1"></script>
   <script src="admin-absence-days.js?v=20261114-1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
-  <script src="renewal-requests-admin.js"></script>
   <script src="content-admin.js?v=20261108-1"></script>\n  <script src="admin-enhancements.js?v=20261110-1"></script>
 </body>
 </html>

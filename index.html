@@ -17,7 +17,7 @@
 <style>
 .subscription-countdown{--countdown-color:#15966b;display:flex;align-items:center;justify-content:center;gap:22px;margin:18px 0;padding:22px;border:1px solid var(--countdown-color);border-radius:22px;background:#f5fbf8;text-align:right;transition:.25s}
 .subscription-countdown.countdown-green{--countdown-color:#15966b;background:#f1faf6}.subscription-countdown.countdown-yellow{--countdown-color:#d5a300;background:#fffbed}.subscription-countdown.countdown-orange{--countdown-color:#e97820;background:#fff5ed}.subscription-countdown.countdown-red{--countdown-color:#d93636;background:#fff1f1}
-.countdown-circle-wrap{position:relative;flex:0 0 140px;width:140px;height:140px}.countdown-ring{width:140px;height:140px;transform:rotate(-90deg)}.countdown-ring-track,.countdown-ring-progress{fill:none;stroke-width:9}.countdown-ring-track{stroke:#e8edf0}.countdown-ring-progress{stroke:var(--countdown-color);stroke-linecap:round;stroke-dasharray:377;stroke-dashoffset:0;transition:stroke-dashoffset .45s,stroke .25s}.countdown-circle-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--countdown-color)}.countdown-circle-center strong{font-size:2rem;line-height:1.2}.countdown-circle-center span{font-size:.76rem;color:#64748b}.countdown-copy{display:flex;flex-direction:column;gap:7px;min-width:0}.countdown-label{font-size:.85rem;color:#64748b}#subscription-countdown-message{font-size:1.02rem;color:#173b57}#subscription-countdown-note{font-size:.83rem;color:#64748b}.renewal-request-btn{margin-top:7px;border:0;border-radius:12px;padding:11px 18px;background:#123b5a;color:#fff;font:inherit;font-weight:700;cursor:pointer;align-self:flex-start}.renewal-request-btn:disabled{opacity:.6;cursor:not-allowed}.renewal-request-message{font-size:.84rem;font-weight:700;color:#16805d}@media(max-width:560px){.subscription-countdown{flex-direction:column;text-align:center}.countdown-copy{align-items:center}.renewal-request-btn{align-self:center}}
+.countdown-circle-wrap{position:relative;flex:0 0 140px;width:140px;height:140px}.countdown-ring{width:140px;height:140px;transform:rotate(-90deg)}.countdown-ring-track,.countdown-ring-progress{fill:none;stroke-width:9}.countdown-ring-track{stroke:#e8edf0}.countdown-ring-progress{stroke:var(--countdown-color);stroke-linecap:round;stroke-dasharray:377;stroke-dashoffset:0;transition:stroke-dashoffset .45s,stroke .25s}.countdown-circle-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--countdown-color)}.countdown-circle-center strong{font-size:2rem;line-height:1.2}.countdown-circle-center span{font-size:.76rem;color:#64748b}.countdown-copy{display:flex;flex-direction:column;gap:7px;min-width:0}.countdown-label{font-size:.85rem;color:#64748b}#subscription-countdown-message{font-size:1.02rem;color:#173b57}#subscription-countdown-note{font-size:.83rem;color:#64748b}@media(max-width:560px){.subscription-countdown{flex-direction:column;text-align:center}.countdown-copy{align-items:center}}
 </style>
 </head>
 <body>
@@ -271,8 +271,6 @@
             <strong id="subscription-countdown-message">جارٍ تحميل بيانات اشتراككِ...</strong>
             <span id="subscription-countdown-note">نحسب لكِ الأيام المتبقية في اشتراككِ.</span>
             <div id="subscription-adjustment-notices" class="subscription-adjustment-notices" hidden></div>
-            <button id="renewal-request-btn" class="renewal-request-btn" type="button" hidden>طلب تجديد الاشتراك</button>
-            <span id="renewal-request-message" class="renewal-request-message" role="status" hidden></span>
           </div>
         </div>
 
@@ -337,7 +335,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="profile.js?v=20261110-member-card1"></script>
   <script src="member-tracking.js?v=20261114-manual-absence-history1"></script>
-  <script src="subscription-countdown.js?v=20261110-adjustments"></script>
+  <script src="subscription-countdown.js?v=20261115-no-renewal1"></script>
   <script src="app-layout.js"></script>
   <script src="requests-member.js?v=20261114-subscription-cycle1"></script>
   <script src="requests-navigation.js"></script>

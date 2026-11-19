@@ -142,7 +142,7 @@ async function processDailyAbsences() {
         const freshSnap = await tx.get(memberRef);
         if (!freshSnap.exists) return null;
         const member = freshSnap.data();
-        if (member.active === false || member.membershipActive === false) return null;
+        if (member.active === false || member.membershipActive === false || member.archived === true) return null;
 
         const startKey = dateKeyForTimestamp(member.startDate);
         let endKey = dateKeyForTimestamp(member.endDate);
@@ -153,6 +153,7 @@ async function processDailyAbsences() {
 
         let attendanceRemaining = numericBalance(member.attendanceDaysRemaining, 30);
         let graceRemaining = numericBalance(member.graceAbsenceDaysRemaining, 7);
+        let extraGraceRemaining = numericBalance(member.graceAbsenceExtraDaysRemaining, 0);
         let graceCycleStartKey = typeof member.graceAbsenceCycleStartDate === 'string'
           ? member.graceAbsenceCycleStartDate
           : (subscriptionCycleStartKey(startKey, last) || startKey);
@@ -163,17 +164,15 @@ async function processDailyAbsences() {
         }
         if (!dates.length) return null;
 
-        const attendanceSnaps = [];
         const calendarSnaps = [];
         for (const key of dates) {
-          attendanceSnaps.push(await tx.get(memberRef.collection('attendance').doc(key)));
           calendarSnaps.push(await tx.get(db.collection('clubCalendar').doc(key)));
         }
 
         let lastProcessed = last;
         let closedCompensationDays = 0;
         let approvedLeaveDays = 0;
-        let ordinaryGraceDays = 0;
+        let ordinaryGraceDays = 0; // kept in logs for compatibility; ordinary days no longer consume grace
         let ordinaryMembershipDays = 0;
         let processed = 0;
 
@@ -181,16 +180,21 @@ async function processDailyAbsences() {
           const key = dates[i];
           if (key < startKey) { lastProcessed = key; processed++; continue; }
           if (key > endKey) break;
+          const dateRequests = absenceRequestsByDate.get(key) || [];
+          const pendingLeave = dateRequests.some(request => (request.status || 'pending') === 'pending');
+          // Do not advance past a pending request: administration must decide first.
+          // This prevents a pending day from being charged as an ordinary subscription day.
+          if (pendingLeave) break;
+
           const dateCycleStart = subscriptionCycleStartKey(startKey, key);
           if (dateCycleStart && dateCycleStart !== graceCycleStartKey) {
             graceRemaining = 7;
             graceCycleStartKey = dateCycleStart;
           }
           const calendar = calendarSnaps[i].exists ? calendarSnaps[i].data() : {};
-          const attended = attendanceSnaps[i].exists;
-          const dateRequests = absenceRequestsByDate.get(key) || [];
-          const approvedLeave = dateRequests.some(request => request.status === 'approved');
-          const approvedLeaveAlreadyApplied = dateRequests.some(request => request.status === 'approved' && request.balanceApplied === true);
+          const approvedRequest = dateRequests.find(request => request.status === 'approved');
+          const approvedLeave = !!approvedRequest;
+          const approvedLeaveAlreadyApplied = !!(approvedRequest && approvedRequest.balanceApplied === true);
           const isFriday = weekdayForKey(key) === 5;
 
           // Fridays are the club's normal weekly closure; no compensation is added.
@@ -209,24 +213,33 @@ async function processDailyAbsences() {
             lastProcessed = key; processed++; continue;
           }
 
-          if (attended) {
-            // Reception has already deducted one attendance day at check-in.
-            lastProcessed = key; processed++; continue;
-          }
-
           if (approvedLeave) {
-            // Approved absence consumes this subscription month's 7-day allowance first.
-            if (!approvedLeaveAlreadyApplied && graceRemaining > 0) {
-              graceRemaining--;
-            } else if (!approvedLeaveAlreadyApplied && graceRemaining <= 0) {
-              attendanceRemaining = Math.max(0, attendanceRemaining - 1);
-              ordinaryMembershipDays++;
+            // An approved request protects the subscription day only when an allowance day exists.
+            // Already-applied requests must never be charged a second time.
+            if (!approvedLeaveAlreadyApplied) {
+              let membershipDayCharged = false;
+              if (graceRemaining > 0) {
+                graceRemaining--;
+              } else if (extraGraceRemaining > 0) {
+                extraGraceRemaining--;
+              } else {
+                attendanceRemaining = Math.max(0, attendanceRemaining - 1);
+                ordinaryMembershipDays++;
+                membershipDayCharged = true;
+              }
+              const requestDoc = absenceRequestsSnapshot.docs.find(doc => {
+                const d = doc.data(); return d.dateKey === key && d.status === 'approved';
+              });
+              if (requestDoc) tx.update(requestDoc.ref, {
+                balanceApplied: true,
+                balanceAppliedAt: admin.firestore.FieldValue.serverTimestamp(),
+                membershipDayCharged
+              });
             }
             approvedLeaveDays++;
-          } else if (graceRemaining > 0) {
-            graceRemaining--;
-            ordinaryGraceDays++;
           } else {
+            // No approved leave request: every scheduled day consumes one subscription day,
+            // regardless of actual attendance. The 7-day allowance is reserved for approved requests.
             attendanceRemaining = Math.max(0, attendanceRemaining - 1);
             ordinaryMembershipDays++;
           }
@@ -242,6 +255,7 @@ async function processDailyAbsences() {
           absenceAllowanceDays: 7,
           absenceAllowanceDaysRemaining: graceRemaining,
           graceAbsenceDaysConsumed: Math.max(0, 7 - graceRemaining),
+          graceAbsenceExtraDaysRemaining: extraGraceRemaining,
           attendanceLastProcessedDate: lastProcessed,
           attendanceAbsenceProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
           attendancePlanVersion: 2
@@ -249,7 +263,7 @@ async function processDailyAbsences() {
         if (closedCompensationDays > 0) update.endDate = timestampAtKsaEndOfDay(endKey);
         tx.set(memberRef, update, { merge: true });
         return { datesProcessed: processed, attendanceDaysRemaining: attendanceRemaining,
-          graceAbsenceDaysRemaining: graceRemaining, approvedLeaveDays, ordinaryGraceDays,
+          graceAbsenceDaysRemaining: graceRemaining, graceAbsenceExtraDaysRemaining: extraGraceRemaining, approvedLeaveDays, ordinaryGraceDays,
           ordinaryMembershipDays, closedCompensationDays, endDateKey: endKey };
       });
 

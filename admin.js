@@ -135,7 +135,7 @@ async function loadMembers() {
   try {
     const snapshot = await firebase.firestore().collection("members").orderBy("name").get();
     allMembers = [];
-    snapshot.forEach(doc => { const data = doc.data(); if (!data.linkedToUid) allMembers.push({ uid: doc.id, ...data }); });
+    snapshot.forEach(doc => { const data = doc.data(); if (!data.linkedToUid && data.archived !== true) allMembers.push({ uid: doc.id, ...data }); });
     updateStats();
     renderMembers();
   } catch (error) {

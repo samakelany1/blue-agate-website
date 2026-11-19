@@ -87,10 +87,12 @@
     const cycleKey = balanceCycleKey(member, cycle.startKey);
     const rawRemaining = Number(member.graceAbsenceDaysRemaining ?? member.absenceAllowanceDaysRemaining ?? TOTAL_GRACE_DAYS);
     const remaining = Number.isFinite(rawRemaining) ? Math.max(0, Math.min(TOTAL_GRACE_DAYS, rawRemaining)) : TOTAL_GRACE_DAYS;
-    const usedByBalance = cycleKey === cycle.cycleStart ? TOTAL_GRACE_DAYS - remaining : 0;
+    const extraRemaining = Math.max(0, Number(member.graceAbsenceExtraDaysRemaining || 0));
+    const usedByBalance = cycleKey === cycle.cycleStart ? (TOTAL_GRACE_DAYS - remaining) : 0;
+    const allowedThisCycle = TOTAL_GRACE_DAYS + extraRemaining;
     // The member balance includes already processed and manually entered absences.
     // Add only pending/unprocessed request dates to reserve their days in advance.
-    return usedByBalance + reservedRequestDates.size;
+    return Math.min(allowedThisCycle, usedByBalance + reservedRequestDates.size);
   }
   async function refreshCycleLimit(memberRef, member, targetKey) {
     const counter = el("absence-cycle-counter");
@@ -104,13 +106,15 @@
       return { count: 0, reached: true, cycle: null };
     }
     const count = await getCycleUsage(memberRef, member, cycle);
-    const reached = count >= TOTAL_GRACE_DAYS;
-    if (counter) counter.textContent = `استخدمتِ ${count} من 7 أيام غياب في دورة اشتراكك (${dateLabel(cycle.cycleStart)} – ${dateLabel(cycle.cycleEnd)})`;
+    const extra = Math.max(0, Number(member.graceAbsenceExtraDaysRemaining || 0));
+    const allowance = TOTAL_GRACE_DAYS + extra;
+    const reached = count >= allowance;
+    if (counter) counter.textContent = `استخدمتِ ${count} من ${allowance} أيام الغياب المتاحة في دورة اشتراكك (${dateLabel(cycle.cycleStart)} – ${dateLabel(cycle.cycleEnd)})`;
     if (submit) {
       submit.disabled = reached;
       submit.textContent = reached ? "اكتمل رصيد الغياب لهذه الدورة" : "إرسال طلب الغياب";
     }
-    if (reached) showMessage("absence-request-message", "وصلتِ إلى الحد الأقصى وهو 7 أيام غياب خلال دورة اشتراكك الحالية. يتجدد الرصيد مع بداية دورة الاشتراك التالية.", "error");
+    if (reached) showMessage("absence-request-message", "اكتمل رصيد الغياب المتاح لهذه الدورة. يتجدد الرصيد الأساسي مع بداية دورة الاشتراك التالية.", "error");
     return { count, reached, cycle };
   }
   async function loadMyRequests() {
@@ -142,14 +146,14 @@
       if (dateKey < localDateKey()) throw new Error("PAST_DATE");
       const cycle = memberCycleKeys(member, dateKey);
       if (!cycle) throw new Error("OUTSIDE_SUBSCRIPTION");
-      const [usage, requestSnap, manualDoc, attendanceDoc] = await Promise.all([
+      const [usage, requestSnap, manualDoc] = await Promise.all([
         getCycleUsage(memberRef, member, cycle),
         memberRef.collection("absenceRequests").get(),
-        memberRef.collection("subscriptionAdjustments").doc(`manual_absence_${dateKey}`).get(),
-        memberRef.collection("attendance").doc(dateKey).get()
+        memberRef.collection("subscriptionAdjustments").doc(`manual_absence_${dateKey}`).get()
       ]);
-      if (manualDoc.exists || attendanceDoc.exists || requestSnap.docs.some(doc => doc.data().dateKey === dateKey && (doc.data().status || "pending") !== "rejected")) throw new Error("DATE_ALREADY_RECORDED");
-      if (usage >= TOTAL_GRACE_DAYS) throw new Error("CYCLE_LIMIT_REACHED");
+      if (manualDoc.exists || requestSnap.docs.some(doc => doc.data().dateKey === dateKey && (doc.data().status || "pending") !== "rejected")) throw new Error("DATE_ALREADY_RECORDED");
+      const allowed = TOTAL_GRACE_DAYS + Math.max(0, Number(member.graceAbsenceExtraDaysRemaining || 0));
+      if (usage >= allowed) throw new Error("CYCLE_LIMIT_REACHED");
       await memberRef.collection("absenceRequests").add({
         uid: user.uid, memberName: member.name || user.displayName || "", type: "absence", dateKey, reason,
         subscriptionCycleStartDate: cycle.cycleStart,
@@ -161,9 +165,9 @@
       await loadMyRequests();
     } catch (error) {
       console.error("Submit absence request error:", error);
-      const message = error.message === "CYCLE_LIMIT_REACHED" ? "وصلتِ إلى الحد الأقصى وهو 7 أيام غياب خلال دورة اشتراكك. يتجدد الرصيد مع بداية دورة الاشتراك التالية."
+      const message = error.message === "CYCLE_LIMIT_REACHED" ? "اكتمل رصيد الغياب المتاح لهذه الدورة. يتجدد الرصيد الأساسي مع بداية دورة الاشتراك التالية."
         : error.message === "OUTSIDE_SUBSCRIPTION" ? "تاريخ الغياب المحدد خارج مدة اشتراكك. اختاري تاريخًا داخل اشتراكك الحالي."
-        : error.message === "DATE_ALREADY_RECORDED" ? "يوجد حضور أو طلب غياب مسجل لهذا التاريخ بالفعل."
+        : error.message === "DATE_ALREADY_RECORDED" ? "يوجد طلب غياب مسجل لهذا التاريخ بالفعل."
         : error.message === "PAST_DATE" ? "لا يمكن تقديم طلب غياب بتاريخ سابق لليوم."
         : "تعذر إرسال الطلب. تحققي من اتصالك ثم حاولي مجددًا.";
       showMessage("absence-request-message", message, "error");

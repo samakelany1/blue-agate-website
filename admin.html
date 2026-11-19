@@ -165,6 +165,8 @@
         <div id="members-list" class="members-list">
           <div class="empty-state">جاري تحميل المشتركات...</div>
         </div>
+        <div class="section-head" style="margin-top:22px"><div><h3>المشتركات المؤرشفة</h3><p>الحسابات المخفية من القائمة النشطة ويمكن استعادتها.</p></div><button id="refresh-archived-members" class="secondary-btn dark-btn" type="button">تحديث الأرشيف</button></div>
+        <div id="archived-members-list" class="members-list"><div class="empty-state">جاري تحميل الأرشيف...</div></div>
       </section>
 
       <section class="admin-card trainer-management-card">
@@ -316,6 +318,26 @@
           <div id="member-link-code-result" class="admin-message" hidden></div>
         </div>
 
+        <section class="admin-measurements-box admin-balance-tools">
+          <div class="section-head"><div><p class="eyebrow">ADMIN BALANCE CONTROLS</p><h3>إدارة رصيد الغياب</h3><p>إرجاع أيام خُصمت بالخطأ، أو تحديد الرصيد، أو منح رصيد إضافي. جميع العمليات تُسجل إداريًا.</p></div></div>
+          <div id="admin-balance-tools-message" class="admin-message" hidden></div>
+          <div class="member-form two-column-form">
+            <div><label for="balance-return-days">عدد الأيام المراد إرجاعها</label><input id="balance-return-days" type="number" min="1" max="365" step="1" value="1"></div>
+            <div><label for="balance-return-reason">سبب الإرجاع</label><input id="balance-return-reason" maxlength="180" placeholder="مثال: تصحيح خصم آلي خاطئ"></div>
+            <div class="full-width"><button id="balance-return-btn" class="primary-btn" type="button">إرجاع الأيام إلى الرصيد</button></div>
+            <div><label for="balance-set-total">تحديد إجمالي الرصيد المتاح</label><input id="balance-set-total" type="number" min="0" max="365" step="1" placeholder="مثال: 7"></div>
+            <div><label for="balance-set-reason">سبب تعديل الإجمالي</label><input id="balance-set-reason" maxlength="180" placeholder="سبب التعديل"></div>
+            <div class="full-width"><button id="balance-set-btn" class="secondary-btn dark-btn" type="button">حفظ الرصيد المحدد</button></div>
+            <div><label for="balance-extra-days">أيام إضافية فوق الرصيد الأساسي</label><input id="balance-extra-days" type="number" min="1" max="365" step="1" value="1"></div>
+            <div><label for="balance-extra-reason">سبب المنح</label><input id="balance-extra-reason" maxlength="180" placeholder="مثال: استثناء إداري"></div>
+            <div class="full-width"><button id="balance-extra-btn" class="secondary-btn dark-btn" type="button">منح أيام غياب إضافية</button></div>
+          </div>
+          <div id="admin-balance-current" class="admin-message">اختاري مشتركة لعرض رصيدها.</div>
+          <div class="measurement-admin-list-wrap"><h4>سجل تعديلات الرصيد</h4><div id="admin-balance-audit-list" class="mini-attendance-list"></div></div>
+          <div class="section-head" style="margin-top:18px"><div><h3>أرشفة الحساب</h3><p>تُخفي المشتركة من القائمة النشطة مع الاحتفاظ ببياناتها وسجلاتها.</p></div><button id="archive-member-btn" class="secondary-btn dark-btn" type="button">أرشفة الحساب الحالي</button></div>
+          <div id="admin-archive-message" class="admin-message" hidden></div>
+        </section>
+
         <section class="admin-measurements-box">
           <div class="section-head"><div><p class="eyebrow">BODY MEASUREMENTS</p><h3>قياسات المشتركة</h3><p>أضيفي قياسًا جديدًا؛ سيظهر في حساب المشتركة مع القياسات السابقة.</p></div></div>
           <div id="measurement-admin-message" class="admin-message" hidden></div>
@@ -340,15 +362,15 @@
         </section>
 
         <section class="admin-manual-absence-box">
-          <div class="section-head"><div><p class="eyebrow">MANUAL ABSENCE CONTROL</p><h3>إضافة يوم غياب يدوي</h3><p>سجّلي يوم الغياب من لوحة الإدارة، وسيُخصم تلقائيًا من رصيد 7 أيام لدورة الاشتراك الحالية، مع حفظ التاريخ في سجل المشتركة.</p></div></div>
+          <div class="section-head"><div><p class="eyebrow">MANUAL ABSENCE CONTROL</p><h3>إضافة يوم غياب يدوي</h3><p>سجّلي اليوم يدويًا عند الحاجة؛ يُخصم من أيام الاشتراك. رصيد الغياب السبعة أيام مخصص لطلبات الغياب المعتمدة فقط.</p></div></div>
           <div id="admin-manual-absence-balance" class="admin-message">اختاري مشتركة لعرض رصيدها.</div>
           <div id="admin-manual-absence-message" class="admin-message" hidden></div>
           <form id="admin-manual-absence-form" class="member-form two-column-form">
             <div><label for="admin-manual-absence-date">تاريخ الغياب</label><input id="admin-manual-absence-date" type="date" required></div>
             <div><label for="admin-manual-absence-reason">سبب / ملاحظة</label><input id="admin-manual-absence-reason" type="text" maxlength="240" required placeholder="مثال: غياب مسجل من الإدارة"></div>
-            <div class="full-width"><button class="primary-btn" type="submit">إضافة يوم الغياب وخصمه من الرصيد</button></div>
+            <div class="full-width"><button class="primary-btn" type="submit">تسجيل اليوم وخصمه من الاشتراك</button></div>
           </form>
-          <div class="measurement-admin-list-wrap"><h4>سجل أيام الغياب المضافة من الإدارة</h4><div id="admin-manual-absence-list" class="mini-attendance-list"><div class="mini-empty">اختاري مشتركة لعرض السجل.</div></div></div>
+          <div class="measurement-admin-list-wrap"><h4>سجل الأيام المسجلة يدويًا من الإدارة</h4><div id="admin-manual-absence-list" class="mini-attendance-list"><div class="mini-empty">اختاري مشتركة لعرض السجل.</div></div></div>
         </section>
 
         <div class="attendance-box">
@@ -370,6 +392,7 @@
   <script src="firebase-config.js"></script>
   <script src="admin.js?v=20261115-subscription-dates-no-renewal1"></script>
   <script src="admin-absence-days.js?v=20261114-1"></script>
+  <script src="admin-member-controls.js?v=20261119-1"></script>
   <script src="requests-admin.js?v=20261105-link1"></script>
   <script src="content-admin.js?v=20261108-1"></script>\n  <script src="admin-enhancements.js?v=20261110-1"></script>
 </body>

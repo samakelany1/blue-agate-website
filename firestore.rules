@@ -43,6 +43,7 @@ service cloud.firestore {
     function memberCanAttend(userId) {
       return exists(memberPath(userId))
         && get(memberPath(userId)).data.active != false
+        && get(memberPath(userId)).data.archived != true
         && get(memberPath(userId)).data.membershipActive != false
         && get(memberPath(userId)).data.startDate is timestamp
         && get(memberPath(userId)).data.endDate is timestamp
@@ -71,6 +72,11 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone']));
 
       allow delete: if isAdmin();
+
+      match /adminAuditLog/{logId} {
+        allow read, create: if isAdmin();
+        allow update, delete: if false;
+      }
 
       match /measurements/{measurementId} {
         // Members can view only their own measurements. Only admins can add, edit, or delete.
@@ -129,6 +135,7 @@ service cloud.firestore {
       match /absenceRequests/{requestId} {
         allow read: if isAdmin() || isOwner(userId);
         allow create: if isOwner(userId)
+          && get(memberPath(userId)).data.archived != true
           && request.resource.data.keys().hasOnly([
             'uid', 'memberName', 'type', 'dateKey', 'reason',
             'subscriptionCycleStartDate', 'status', 'createdAt'
@@ -145,7 +152,7 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time;
         allow update: if isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'reviewNote', 'reviewedAt', 'reviewedBy', 'balanceApplied'])
+            .hasOnly(['status', 'reviewNote', 'reviewedAt', 'reviewedBy', 'balanceApplied', 'balanceAppliedAt', 'membershipDayCharged'])
           && request.resource.data.status in ['approved', 'rejected'];
         allow delete: if isAdmin();
       }

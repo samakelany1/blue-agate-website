@@ -127,17 +127,9 @@
         const freshCycle = cycleStartForDate(freshStart, dateKey);
         const freshCurrentCycle = cycleStartForDate(freshStart, today);
         if (freshCycle !== freshCurrentCycle) throw new Error("NOT_CURRENT_CYCLE");
-        const storedCycle = balanceCycleKey(freshMember, freshStart);
-        const remaining = storedCycle === freshCycle
-          ? Math.max(0, Math.min(TOTAL_GRACE_DAYS, Number(freshMember.graceAbsenceDaysRemaining ?? freshMember.absenceAllowanceDaysRemaining ?? TOTAL_GRACE_DAYS)))
-          : TOTAL_GRACE_DAYS;
-        if (remaining <= 0) throw new Error("BALANCE_EMPTY");
+        const membershipRemaining = Math.max(0, Number(freshMember.attendanceDaysRemaining ?? 30));
         tx.update(memberRef, {
-          graceAbsenceCycleStartDate: freshCycle,
-          graceAbsenceDaysRemaining: remaining - 1,
-          graceAbsenceDaysConsumed: TOTAL_GRACE_DAYS - (remaining - 1),
-          absenceAllowanceDays: TOTAL_GRACE_DAYS,
-          absenceAllowanceDaysRemaining: remaining - 1,
+          attendanceDaysRemaining: Math.max(0, membershipRemaining - 1),
           excludedAbsenceDates: firebase.firestore.FieldValue.arrayUnion(dateKey)
         });
         tx.set(manualRef, {
@@ -148,7 +140,7 @@
         });
       });
       el("admin-manual-absence-form").reset();
-      message("تم تسجيل يوم الغياب وخصمه من رصيد الأيام السبعة بنجاح.", "success");
+      message("تم تسجيل اليوم وخصمه من أيام الاشتراك. الأيام السبعة مخصصة لطلبات الغياب المعتمدة فقط.", "success");
       await loadAdminAbsenceControls(selectedUid);
     } catch (error) {
       console.error("Add manual absence error:", error);
@@ -162,7 +154,6 @@
         MANUAL_EXISTS: "هذا اليوم مسجل مسبقًا كغياب يدوي.",
         CLUB_CLOSED: "النادي مغلق في هذا التاريخ، ولا يُخصم كيوم غياب.",
         DATE_ALREADY_PROCESSED: "تمت معالجة هذا التاريخ مسبقًا بواسطة النظام اليومي؛ لا يمكن خصمه مرة ثانية.",
-        BALANCE_EMPTY: "استهلكت المشتركة رصيد الأيام السبعة لهذه الدورة.",
         MEMBER_NOT_FOUND: "لم يتم العثور على بيانات المشتركة.",
         NOT_SIGNED_IN: "انتهت جلسة الدخول. سجلي الدخول مرة أخرى."
       };

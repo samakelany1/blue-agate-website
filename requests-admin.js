@@ -151,42 +151,52 @@
         const todayKey = `${todayValues.year}-${todayValues.month}-${todayValues.day}`;
         if (status === "approved" && memberSnap.exists) {
           const member = memberSnap.data();
-          if (requestData.dateKey < todayKey && typeof member.attendanceLastProcessedDate === "string" && member.attendanceLastProcessedDate >= requestData.dateKey) {
+          if (member.archived === true) throw new Error("MEMBER_ARCHIVED");
+          if (typeof member.attendanceLastProcessedDate === "string" && requestData.dateKey <= member.attendanceLastProcessedDate) {
             throw new Error("ABSENCE_DATE_ALREADY_PROCESSED");
           }
-          if (requestData.dateKey === todayKey) {
-            const attendanceSnap = await tx.get(memberRef.collection("attendance").doc(todayKey));
-            if (attendanceSnap.exists) throw new Error("MEMBER_ALREADY_ATTENDED");
-            const startKey = ksaDateKey(member.startDate);
-            const cycleStart = cycleStartForDate(startKey, requestData.dateKey);
-            const balanceCycleStart = typeof member.graceAbsenceCycleStartDate === "string"
-              ? member.graceAbsenceCycleStartDate
-              : (cycleStartForDate(startKey, member.attendanceLastProcessedDate || startKey) || startKey);
-            const storedGrace = Number.isFinite(member.graceAbsenceDaysRemaining) ? Math.max(0, Math.min(7, member.graceAbsenceDaysRemaining)) : 7;
-            const grace = balanceCycleStart === cycleStart ? storedGrace : 7;
-            if (grace > 0) {
-              tx.update(memberRef, {
-                graceAbsenceCycleStartDate: cycleStart,
-                graceAbsenceDaysRemaining: grace - 1,
-                graceAbsenceDaysConsumed: 7 - (grace - 1),
-                absenceAllowanceDays: 7,
-                absenceAllowanceDaysRemaining: grace - 1
-              });
-              update.balanceApplied = true;
-            }
-          }
+          const requestDate = new Date(`${requestData.dateKey}T00:00:00.000Z`);
+          if (requestDate.getUTCDay() === 5) throw new Error("FRIDAY_CLOSED");
+          const calendarRef = db.collection("clubCalendar").doc(requestData.dateKey);
+          const calendarSnap = await tx.get(calendarRef);
+          const calendar = calendarSnap.exists ? calendarSnap.data() : {};
+          if (calendar.closed === true || calendar.type === "closed") throw new Error("CLUB_CLOSED");
+          const startKey = ksaDateKey(member.startDate);
+          const cycleStart = startKey ? cycleStartForDate(startKey, requestData.dateKey) : null;
+          if (!cycleStart) throw new Error("DATE_OUTSIDE_SUBSCRIPTION");
+          const storedCycle = typeof member.graceAbsenceCycleStartDate === "string" ? member.graceAbsenceCycleStartDate : cycleStart;
+          let baseRemaining = storedCycle === cycleStart ? Math.max(0, Number(member.graceAbsenceDaysRemaining ?? member.absenceAllowanceDaysRemaining ?? 7)) : 7;
+          let extraRemaining = Math.max(0, Number(member.graceAbsenceExtraDaysRemaining || 0));
+          let membershipDayCharged = false;
+          if (baseRemaining > 0) baseRemaining--;
+          else if (extraRemaining > 0) extraRemaining--;
+          else { membershipDayCharged = true; }
+          const memberUpdate = {
+            graceAbsenceDaysRemaining: baseRemaining,
+            absenceAllowanceDaysRemaining: baseRemaining,
+            graceAbsenceCycleStartDate: cycleStart,
+            graceAbsenceDaysConsumed: Math.max(0, 7 - baseRemaining),
+            graceAbsenceExtraDaysRemaining: extraRemaining
+          };
+          if (membershipDayCharged) memberUpdate.attendanceDaysRemaining = Math.max(0, Number(member.attendanceDaysRemaining ?? 30) - 1);
+          tx.update(memberRef, memberUpdate);
+          update.balanceApplied = true;
+          update.balanceAppliedAt = firebase.firestore.FieldValue.serverTimestamp();
+          update.membershipDayCharged = membershipDayCharged;
         }
         tx.update(request.ref, update);
       });
-      showMessage(status === "approved" ? "تمت الموافقة على طلب الغياب. خُصم اليوم من أيام السماح فقط، ولم يتغير رصيد الـ30 يومًا." : "تم رفض طلب الغياب.", "success");
+      showMessage(status === "approved" ? "تمت الموافقة وخصم اليوم مباشرة من رصيد الغياب المتاح، أو من أيام الاشتراك إذا نفد الرصيد. لن يتكرر الخصم في المعالجة اليومية." : "تم رفض الطلب؛ وسيُخصم اليوم من أيام الاشتراك عند المعالجة اليومية.", "success");
       await loadRequests();
     } catch (error) {
       console.error("Review absence request error:", error);
-      const message = error.message === "ABSENCE_DATE_ALREADY_PROCESSED"
-        ? "هذا التاريخ تمت معالجته بالفعل. لا يمكن اعتماد الطلب بأمان بعد إغلاق المعالجة اليومية."
-        : error.message === "MEMBER_ALREADY_ATTENDED"
-          ? "لا يمكن اعتماد غياب لهذا اليوم؛ يوجد حضور مسجل للعضوة بالفعل."
-          : "تعذرت مراجعة الطلب. تحققي من قواعد Firestore ثم حاولي مجددًا.";
+      const message = ({
+        ABSENCE_DATE_ALREADY_PROCESSED: "هذا التاريخ تمت معالجته بالفعل ولا يمكن تعديله بأمان.",
+        MEMBER_ARCHIVED: "لا يمكن اعتماد طلب لحساب مؤرشف.",
+        FRIDAY_CLOSED: "الجمعة إجازة أسبوعية ولا يُخصم عنها غياب.",
+        CLUB_CLOSED: "النادي مغلق في هذا التاريخ ولا يُخصم عنه غياب.",
+        DATE_OUTSIDE_SUBSCRIPTION: "تاريخ الطلب خارج مدة الاشتراك."
+      })[error.message] || "تعذرت مراجعة الطلب. تحققي من قواعد Firestore ثم حاولي مجددًا.";
       showMessage(message, "error");
     }
   }
